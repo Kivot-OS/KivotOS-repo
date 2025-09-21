@@ -70,36 +70,47 @@ jobs:
               mv target/debian/*.deb ../artifacts/
               ;;
             make)
-              repo=${{ matrix.repo }}
-              tag=$(curl -fsSL https://api.github.com/repos/$repo/releases/latest | jq -r .tag_name 2>/dev/null || true)
+              NAME="${{ matrix.name }}"
+              REPO="${{ matrix.repo }}"
+              DESC="${{ matrix.description }}"
+              BINARY="${{ matrix.binary }}"
+              : "${DESC:=Package built by KivotOS CI}"
+              : "${BINARY:=hellwal}"
+
+              tag=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+                    | jq -r .tag_name 2>/dev/null || true)
               if [ -n "$tag" ] && [ "$tag" != "null" ]; then
-                curl -fsSL -o src.tgz "https://github.com/$repo/archive/refs/tags/${tag}.tar.gz"
-                tar -xzf src.tgz && cd $(basename $repo)-${tag#v}
+                curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${tag}.tar.gz"
+                tar -xzf src.tgz && cd "$(basename "$REPO")"-${tag#v}
                 ver=${tag#v}
               else
-                git clone --depth=1 https://github.com/$repo src && cd src
+                git clone --depth=1 "https://github.com/${REPO}" src && cd src
                 ver="0.0+git$(date -u +%Y%m%d)"
               fi
+
               make
-              mkdir -p pkg/DEBIAN pkg/usr/bin pkg/usr/share/doc/${{ matrix.name }}
-              install -Dm755 ${{ matrix.binary || 'hellwal' }} pkg/usr/bin/${{ matrix.name }} || install -Dm755 ${{ matrix.name }} pkg/usr/bin/${{ matrix.name }}
-              [ -f README.md ] && install -Dm644 README.md pkg/usr/share/doc/${{ matrix.name }}/README.md || true
+              mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
+              install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
+              [ -f README.md ] && install -Dm644 README.md "pkg/usr/share/doc/${NAME}/README.md" || true
+
               cat > pkg/DEBIAN/control <<EOF
-            Package: ${{ matrix.name }}
+            Package: ${NAME}
             Version: ${ver}-1
             Section: utils
             Priority: optional
             Architecture: amd64
             Maintainer: KivotOS <maintainers@kivotos.local>
-            Homepage: https://github.com/${{ matrix.repo }}
-            Description: ${{ matrix.description || 'Package built by KivotOS CI' }}
+            Homepage: https://github.com/${REPO}
+            Description: ${DESC}
             EOF
-                          dpkg-deb --build pkg "${{ matrix.name }}_${ver}-1_amd64.deb"
-                          mv ${{ matrix.name }}_*_amd64.deb ../artifacts/
-                          ;;
+
+            dpkg-deb --build pkg "${NAME}_${ver}-1_amd64.deb"
+            mv "${NAME}_${ver}-1_amd64.deb" ../artifacts/
+            ;;
+
             mirror)
               api="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
-              curl -fsSL "$api" | jq -r '.assets[] | .browser_download_url' | grep -E '${{ matrix.pattern }}' | while read url; do
+              curl -fsSL "$api" | jq -r '.assets[] | .browser_download_url' | grep -E "${{ matrix.pattern }}" | while read url; do
                 fn=$(basename "$url"); curl -L "$url" -o "artifacts/$fn"; done
               ;;
             *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
