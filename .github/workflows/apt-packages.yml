@@ -94,15 +94,15 @@ jobs:
               [ -f README.md ] && install -Dm644 README.md "pkg/usr/share/doc/${NAME}/README.md" || true
 
               cat > pkg/DEBIAN/control <<EOF
-            Package: ${NAME}
-            Version: ${ver}-1
-            Section: utils
-            Priority: optional
-            Architecture: amd64
-            Maintainer: KivotOS <maintainers@kivotos.local>
-            Homepage: https://github.com/${REPO}
-            Description: ${DESC}
-            EOF
+Package: ${NAME}
+Version: ${ver}-1
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: KivotOS <maintainers@kivotos.local>
+Homepage: https://github.com/${REPO}
+Description: ${DESC}
+EOF
 
             dpkg-deb --build pkg "${NAME}_${ver}-1_amd64.deb"
             mv "${NAME}_${ver}-1_amd64.deb" ../artifacts/
