@@ -56,34 +56,38 @@ jobs:
           CRATES: ${{ toJson(matrix.crates) }}
         run: |
           set -euo pipefail
-          mkdir -p artifacts
-          TYPE="${{ matrix.type }}"
-          case "$TYPE" in
+          ART="${GITHUB_WORKSPACE}/artifacts"
+          mkdir -p "$ART"
+      
+          case "${{ matrix.type }}" in
             cargo)
               TAG=$(curl -fsSL "https://api.github.com/repos/${{ matrix.repo }}/releases/latest" | jq -r .tag_name)
               curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${TAG}.tar.gz"
               tar -xzf src.tgz
-              cd "$(basename "${{ matrix.repo }}")-${TAG#v}"
+              pushd "$(basename "${{ matrix.repo }}")-${TAG#v}"
               if [ "${CRATES}" != "null" ]; then
                 echo "$CRATES" | jq -r '.[]' | while read -r C; do cargo deb -p "$C" --locked; done
               else
                 cargo deb --locked
               fi
-              mv target/debian/*.deb ../artifacts/
+              mv target/debian/*.deb "$ART"
+              popd
               ;;
+      
             make)
               NAME="${{ matrix.name }}"
               REPO="${{ matrix.repo }}"
-              DESC="${{ matrix.description }}"
-              BINARY="${{ matrix.binary }}"; : "${BINARY:=hellwal}"; : "${DESC:=Package built by KivotOS CI}"
+              DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
+              BINARY="${{ matrix.binary }}";     : "${BINARY:=hellwal}"
+      
               TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name 2>/dev/null || true)
               if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
                 curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
-                tar -xzf src.tgz && cd "$(basename "$REPO")"-${TAG#v}; VER=${TAG#v}
+                tar -xzf src.tgz; SRC_DIR="$(basename "$REPO")-${TAG#v}"; VER=${TAG#v}
               else
-                git clone --depth=1 "https://github.com/${REPO}" src && cd src
-                VER="0.0+git$(date -u +%Y%m%d)"
+                git clone --depth=1 "https://github.com/${REPO}" src; SRC_DIR=src; VER="0.0+git$(date -u +%Y%m%d)"
               fi
+              pushd "$SRC_DIR"
               make
               mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
               install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
@@ -98,17 +102,21 @@ jobs:
                 "Homepage: https://github.com/${REPO}" \
                 "Description: ${DESC}" > pkg/DEBIAN/control
               dpkg-deb --build pkg "${NAME}_${VER}-1_amd64.deb"
-              mv "${NAME}_${VER}-1_amd64.deb" ../artifacts/
+              mv "${NAME}_${VER}-1_amd64.deb" "$ART"
+              popd
               ;;
+      
             mirror)
               API="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
               curl -fsSL "$API" | jq -r '.assets[] | .browser_download_url' \
                 | grep -E "${{ matrix.pattern }}" \
-                | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "artifacts/$FN"; done
+                | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "$ART/$FN"; done
               ;;
-            *) echo "Unknown type: $TYPE"; exit 1;;
+            *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
           esac
-          ls -lh artifacts
+      
+          ls -lh "$ART"
+
 
       - name: Cache aptly DB
         uses: actions/cache@v4
