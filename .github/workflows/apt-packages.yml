@@ -51,19 +51,21 @@ jobs:
           fi
 
       - name: Build/Fetch
+        shell: bash
         env:
           CRATES: ${{ toJson(matrix.crates) }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          case "${{ matrix.type }}" in
+          TYPE="${{ matrix.type }}"
+          case "$TYPE" in
             cargo)
-              tag=$(curl -fsSL https://api.github.com/repos/${{ matrix.repo }}/releases/latest | jq -r .tag_name)
-              curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${tag}.tar.gz"
+              TAG=$(curl -fsSL "https://api.github.com/repos/${{ matrix.repo }}/releases/latest" | jq -r .tag_name)
+              curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${TAG}.tar.gz"
               tar -xzf src.tgz
-              cd $(basename ${{ matrix.repo }})-${tag#v}
+              cd "$(basename "${{ matrix.repo }}")-${TAG#v}"
               if [ "${CRATES}" != "null" ]; then
-                echo "$CRATES" | jq -r '.[]' | while read c; do cargo deb -p "$c" --locked; done
+                echo "$CRATES" | jq -r '.[]' | while read -r C; do cargo deb -p "$C" --locked; done
               else
                 cargo deb --locked
               fi
@@ -73,47 +75,38 @@ jobs:
               NAME="${{ matrix.name }}"
               REPO="${{ matrix.repo }}"
               DESC="${{ matrix.description }}"
-              BINARY="${{ matrix.binary }}"
-              : "${DESC:=Package built by KivotOS CI}"
-              : "${BINARY:=hellwal}"
-
-              tag=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-                    | jq -r .tag_name 2>/dev/null || true)
-              if [ -n "$tag" ] && [ "$tag" != "null" ]; then
-                curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${tag}.tar.gz"
-                tar -xzf src.tgz && cd "$(basename "$REPO")"-${tag#v}
-                ver=${tag#v}
+              BINARY="${{ matrix.binary }}"; : "${BINARY:=hellwal}"; : "${DESC:=Package built by KivotOS CI}"
+              TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name 2>/dev/null || true)
+              if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
+                curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
+                tar -xzf src.tgz && cd "$(basename "$REPO")"-${TAG#v}; VER=${TAG#v}
               else
                 git clone --depth=1 "https://github.com/${REPO}" src && cd src
-                ver="0.0+git$(date -u +%Y%m%d)"
+                VER="0.0+git$(date -u +%Y%m%d)"
               fi
-
               make
               mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
               install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
               [ -f README.md ] && install -Dm644 README.md "pkg/usr/share/doc/${NAME}/README.md" || true
-
-              cat > pkg/DEBIAN/control <<EOF
-Package: ${NAME}
-Version: ${ver}-1
-Section: utils
-Priority: optional
-Architecture: amd64
-Maintainer: KivotOS <maintainers@kivotos.local>
-Homepage: https://github.com/${REPO}
-Description: ${DESC}
-EOF
-
-            dpkg-deb --build pkg "${NAME}_${ver}-1_amd64.deb"
-            mv "${NAME}_${ver}-1_amd64.deb" ../artifacts/
-            ;;
-
-            mirror)
-              api="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
-              curl -fsSL "$api" | jq -r '.assets[] | .browser_download_url' | grep -E "${{ matrix.pattern }}" | while read url; do
-                fn=$(basename "$url"); curl -L "$url" -o "artifacts/$fn"; done
+              printf '%s\n' \
+                "Package: ${NAME}" \
+                "Version: ${VER}-1" \
+                "Section: utils" \
+                "Priority: optional" \
+                "Architecture: amd64" \
+                "Maintainer: KivotOS <maintainers@kivotos.local>" \
+                "Homepage: https://github.com/${REPO}" \
+                "Description: ${DESC}" > pkg/DEBIAN/control
+              dpkg-deb --build pkg "${NAME}_${VER}-1_amd64.deb"
+              mv "${NAME}_${VER}-1_amd64.deb" ../artifacts/
               ;;
-            *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
+            mirror)
+              API="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
+              curl -fsSL "$API" | jq -r '.assets[] | .browser_download_url' \
+                | grep -E "${{ matrix.pattern }}" \
+                | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "artifacts/$FN"; done
+              ;;
+            *) echo "Unknown type: $TYPE"; exit 1;;
           esac
           ls -lh artifacts
 
