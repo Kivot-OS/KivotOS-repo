@@ -20,7 +20,7 @@ https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
 ## 3) Update & install
 ```bash
 sudo apt update
-sudo apt install yazi        # installs yazi-fm + yazi-cli via meta-package
+sudo apt install yazi-cli yazi-fm   # installs yazi-fm + yazi-cli via meta-package
 ```
 # Troubleshooting
 ```bash
