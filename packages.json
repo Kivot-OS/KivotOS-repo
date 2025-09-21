@@ -1,0 +1,7 @@
+{
+"distros": ["trixie"],
+"packages": [
+{ "name": "yazi", "type": "cargo", "repo": "sxyazi/yazi", "crates": ["yazi-fm", "yazi-cli"], "description": "Blazing fast TUI file manager" },
+{ "name": "hellwal", "type": "make", "repo": "danihek/hellwal", "description": "Color palette generator (Pywal-like) written in C++" }
+]
+}
