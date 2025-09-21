@@ -101,7 +101,7 @@ jobs:
                 "Maintainer: KivotOS <maintainers@kivotos.local>" \
                 "Homepage: https://github.com/${REPO}" \
                 "Description: ${DESC}" > pkg/DEBIAN/control
-              dpkg-deb --build pkg "${NAME}_${VER}-1_amd64.deb"
+              dpkg-deb -Zxz --uniform-compression --build pkg "${NAME}_${VER}-1_amd64.deb"
               mv "${NAME}_${VER}-1_amd64.deb" "$ART"
               popd
               ;;
@@ -151,9 +151,13 @@ jobs:
             aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
             aptly repo add "kivotos-$d" artifacts/*.deb
             if aptly publish show filesystem:${PAGES_DIR}: | grep -q " $d "; then
-              aptly publish update "$d" filesystem:${PAGES_DIR}: -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
+              aptly publish update "$d" filesystem:${PAGES_DIR}: \
+                -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
             else
-              aptly publish repo "kivotos-$d" filesystem:${PAGES_DIR}: -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
+              aptly publish repo \
+                -architectures=amd64 \
+                -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
+                "kivotos-$d" filesystem:${PAGES_DIR}:
             fi
           done
 
