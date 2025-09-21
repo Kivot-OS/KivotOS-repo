@@ -1,0 +1,163 @@
+name: apt-packages
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+
+concurrency:
+  group: apt-publish
+  cancel-in-progress: false
+
+env:
+  COMPONENT: main
+  PAGES_DIR: site
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.read.outputs.packages }}
+      distros:  ${{ steps.read.outputs.distros }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          set -euo pipefail
+          if [ ! -f packages.json ]; then
+            echo '{"distros":["trixie"],"packages":[]}' > packages.json
+          fi
+          echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
+          echo "distros=$(jq -r '.distros|join(" ")' packages.json)" >> "$GITHUB_OUTPUT"
+
+  build-and-publish:
+    name: build ${{ matrix.name }} → apt
+    needs: matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.matrix.outputs.packages) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl git aptly dpkg-dev build-essential cmake pkg-config
+          if [ "${{ matrix.type }}" = "cargo" ]; then
+            sudo apt-get install -y rustc cargo
+            cargo install cargo-deb --locked
+          fi
+
+      - name: Build/Fetch
+        env:
+          CRATES: ${{ toJson(matrix.crates) }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          case "${{ matrix.type }}" in
+            cargo)
+              tag=$(curl -fsSL https://api.github.com/repos/${{ matrix.repo }}/releases/latest | jq -r .tag_name)
+              curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${tag}.tar.gz"
+              tar -xzf src.tgz
+              cd $(basename ${{ matrix.repo }})-${tag#v}
+              if [ "${CRATES}" != "null" ]; then
+                echo "$CRATES" | jq -r '.[]' | while read c; do cargo deb -p "$c" --locked; done
+              else
+                cargo deb --locked
+              fi
+              mv target/debian/*.deb ../artifacts/
+              ;;
+            make)
+              repo=${{ matrix.repo }}
+              tag=$(curl -fsSL https://api.github.com/repos/$repo/releases/latest | jq -r .tag_name 2>/dev/null || true)
+              if [ -n "$tag" ] && [ "$tag" != "null" ]; then
+                curl -fsSL -o src.tgz "https://github.com/$repo/archive/refs/tags/${tag}.tar.gz"
+                tar -xzf src.tgz && cd $(basename $repo)-${tag#v}
+                ver=${tag#v}
+              else
+                git clone --depth=1 https://github.com/$repo src && cd src
+                ver="0.0+git$(date -u +%Y%m%d)"
+              fi
+              make
+              mkdir -p pkg/DEBIAN pkg/usr/bin pkg/usr/share/doc/${{ matrix.name }}
+              install -Dm755 ${{ matrix.binary || 'hellwal' }} pkg/usr/bin/${{ matrix.name }} || install -Dm755 ${{ matrix.name }} pkg/usr/bin/${{ matrix.name }}
+              [ -f README.md ] && install -Dm644 README.md pkg/usr/share/doc/${{ matrix.name }}/README.md || true
+              cat > pkg/DEBIAN/control <<EOF
+            Package: ${{ matrix.name }}
+            Version: ${ver}-1
+            Section: utils
+            Priority: optional
+            Architecture: amd64
+            Maintainer: KivotOS <maintainers@kivotos.local>
+            Homepage: https://github.com/${{ matrix.repo }}
+            Description: ${{ matrix.description || 'Package built by KivotOS CI' }}
+            EOF
+                          dpkg-deb --build pkg "${{ matrix.name }}_${ver}-1_amd64.deb"
+                          mv ${{ matrix.name }}_*_amd64.deb ../artifacts/
+                          ;;
+            mirror)
+              api="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
+              curl -fsSL "$api" | jq -r '.assets[] | .browser_download_url' | grep -E '${{ matrix.pattern }}' | while read url; do
+                fn=$(basename "$url"); curl -L "$url" -o "artifacts/$fn"; done
+              ;;
+            *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
+          esac
+          ls -lh artifacts
+
+      - name: Cache aptly DB
+        uses: actions/cache@v4
+        with:
+          path: .aptly
+          key: aptly-db-v1
+          restore-keys: |
+            aptly-db-
+
+      - name: Publish to APT
+        env:
+          DISTROS: ${{ needs.matrix.outputs.distros }}
+          COMPONENT: ${{ env.COMPONENT }}
+          PAGES_DIR: ${{ env.PAGES_DIR }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAGES_DIR"
+          cat > ~/.aptly.conf <<'JSON'
+          {
+            "rootDir": ".aptly",
+            "downloadConcurrency": 4,
+            "FileSystemPublishEndpoints": { "site": { "rootDir": "site", "linkMethod": "copy" } }
+          }
+          JSON
+
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
+
+          for d in $DISTROS; do
+            aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
+            aptly repo add "kivotos-$d" artifacts/*.deb
+            if aptly publish show filesystem:${PAGES_DIR}: | grep -q " $d "; then
+              aptly publish update "$d" filesystem:${PAGES_DIR}: -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
+            else
+              aptly publish repo "kivotos-$d" filesystem:${PAGES_DIR}: -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
+            fi
+          done
+
+          gpg --armor --export "$KEYID" > "$PAGES_DIR/pubkey.gpg"
+          touch "$PAGES_DIR/.nojekyll"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PAGES_DIR }}
+
+  deploy:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/deploy-pages@v4
