@@ -156,14 +156,14 @@ jobs:
           for d in $DISTROS; do
             aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
             aptly repo add -force-replace "kivotos-$d" artifacts/*.deb
-            if aptly publish list -raw | grep -Fq "filesystem:${PAGES_DIR}: $d "; then
-              aptly publish update "$d" filesystem:${PAGES_DIR}: \
+            if aptly publish list -raw | grep -Fq "filesystem:${PAGES_DIR}:$d $d "; then
+              aptly publish update "$d" filesystem:${PAGES_DIR}:$d \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
             else
               aptly publish repo \
                 -architectures=amd64 \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
-                "kivotos-$d" filesystem:${PAGES_DIR}:
+                "kivotos-$d" filesystem:${PAGES_DIR}:$d
             fi
           done
 
@@ -183,6 +183,3 @@ jobs:
       id-token: write
     steps:
       - uses: actions/deploy-pages@v4
-
-
-
