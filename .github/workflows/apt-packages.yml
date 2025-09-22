@@ -156,7 +156,7 @@ jobs:
           for d in $DISTROS; do
             aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
             aptly repo add -force-replace "kivotos-$d" artifacts/*.deb
-            if aptly publish show filesystem:${PAGES_DIR}: "$d" >/dev/null 2>&1; then
+            if aptly publish list -raw | grep -Fq "filesystem:${PAGES_DIR}: $d "; then
               aptly publish update "$d" filesystem:${PAGES_DIR}: \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
             else
