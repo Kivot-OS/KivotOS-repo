@@ -176,14 +176,14 @@ jobs:
           for d in $DISTROS; do
             aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
             find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "kivotos-$d" {} +
-            if aptly publish list -raw | grep -Fq "filesystem:${PAGES_DIR}:$d $d "; then
-              aptly publish update "$d" filesystem:${PAGES_DIR}:$d \
+            if aptly publish list -raw | grep -Fq "site $d"; then
+              aptly publish update "$d" site \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
             else
               aptly publish repo \
                 -architectures=amd64 \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
-                "kivotos-$d" filesystem:${PAGES_DIR}:$d
+                "kivotos-$d" site
             fi
           done
 
