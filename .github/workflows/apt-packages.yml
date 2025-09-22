@@ -161,7 +161,7 @@ jobs:
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          mkdir -p "$PAGES_DIR"
+          rm -rf "$PAGES_DIR" && mkdir -p "$PAGES_DIR"
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
@@ -173,18 +173,16 @@ jobs:
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
 
+          REPO_NAME="kivotos"
+          aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
+          find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+
           for d in $DISTROS; do
-            aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
-            find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "kivotos-$d" {} +
-            if aptly publish list -raw | grep -Fq "site $d"; then
-              aptly publish update "$d" site \
-                -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
-            else
-              aptly publish repo \
-                -architectures=amd64 \
-                -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
-                "kivotos-$d" site
-            fi
+            aptly publish drop "$d" site || true
+            aptly publish repo -distribution="$d" \
+              -architectures=amd64 \
+              -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
+              "$REPO_NAME" site
           done
 
           gpg --armor --export "$KEYID" > "$PAGES_DIR/pubkey.gpg"
