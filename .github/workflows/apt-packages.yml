@@ -29,22 +29,19 @@ jobs:
           echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
           echo "distros=$(jq -r '.distros|join(" ")' packages.json)" >> "$GITHUB_OUTPUT"
 
-  build-and-publish:
-    name: build ${{ matrix.name }} → apt
+  build:
+    name: build ${{ matrix.name }}
     needs: matrix
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.matrix.outputs.packages) }}
-
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq curl git aptly dpkg-dev build-essential cmake pkg-config
+          sudo apt-get install -y jq curl git dpkg-dev build-essential cmake pkg-config
           if [ "${{ matrix.type }}" = "cargo" ]; then
             sudo apt-get install -y rustc cargo
             cargo install cargo-deb --locked
@@ -58,7 +55,7 @@ jobs:
           set -euo pipefail
           ART="${GITHUB_WORKSPACE}/artifacts"
           mkdir -p "$ART"
-      
+
           case "${{ matrix.type }}" in
             cargo)
               TAG=$(curl -fsSL "https://api.github.com/repos/${{ matrix.repo }}/releases/latest" | jq -r .tag_name)
@@ -73,13 +70,13 @@ jobs:
               mv target/debian/*.deb "$ART"
               popd
               ;;
-      
+
             make)
               NAME="${{ matrix.name }}"
               REPO="${{ matrix.repo }}"
               DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
               BINARY="${{ matrix.binary }}";     : "${BINARY:=hellwal}"
-      
+
               TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name 2>/dev/null || true)
               if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
                 curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
@@ -105,7 +102,7 @@ jobs:
               mv "${NAME}_${VER}-1_amd64.deb" "$ART"
               popd
               ;;
-      
+
             mirror)
               API="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
               curl -fsSL "$API" | jq -r '.assets[] | .browser_download_url' \
@@ -114,9 +111,32 @@ jobs:
               ;;
             *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
           esac
-      
+
           ls -lh "$ART"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.name }}
+          path: artifacts/*.deb
+          retention-days: 1
+
+  publish:
+    name: publish to apt
+    needs: [matrix, build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y aptly
+
+      - name: Download all debs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: debs-*
+          path: all-artifacts
 
       - name: Cache aptly DB
         uses: actions/cache@v4
@@ -155,7 +175,7 @@ jobs:
 
           for d in $DISTROS; do
             aptly repo show "kivotos-$d" || aptly repo create -distribution="$d" -component="$COMPONENT" "kivotos-$d"
-            aptly repo add -force-replace "kivotos-$d" artifacts/*.deb
+            find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "kivotos-$d" {} +
             if aptly publish list -raw | grep -Fq "filesystem:${PAGES_DIR}:$d $d "; then
               aptly publish update "$d" filesystem:${PAGES_DIR}:$d \
                 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE"
@@ -176,7 +196,7 @@ jobs:
           path: ${{ env.PAGES_DIR }}
 
   deploy:
-    needs: build-and-publish
+    needs: publish
     runs-on: ubuntu-latest
     permissions:
       pages: write
