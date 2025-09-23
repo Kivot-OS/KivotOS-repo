@@ -63,7 +63,10 @@
             padding: 1rem;
             overflow-x: auto;
             margin: 1rem 0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 100%;
         }
         code {
             font-family: 'Monaco', 'Courier New', monospace;
@@ -181,10 +184,13 @@
             <p style="margin-bottom: 1rem;">Add KivotOS repository to your Debian/Ubuntu system:</p>
             
             <h3 style="font-size: 1rem; margin-top: 1.5rem;">1. Add GPG Key</h3>
-            <pre><code>curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/apt/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
+            <pre><code>curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/apt/pubkey.gpg | \
+  sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
             
             <h3 style="font-size: 1rem;">2. Add Repository</h3>
-            <pre><code>echo "deb [signed-by=/usr/share/keyrings/kivotos.gpg] https://dungdinhmanh.github.io/KivotOS-repo/apt/ trixie main" | sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
+            <pre><code>echo "deb [signed-by=/usr/share/keyrings/kivotos.gpg] \
+https://dungdinhmanh.github.io/KivotOS-repo/apt/ trixie main" | \
+  sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
             
             <h3 style="font-size: 1rem;">3. Update & Install</h3>
             <pre><code>sudo apt update
