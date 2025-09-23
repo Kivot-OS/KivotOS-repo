@@ -129,7 +129,7 @@ jobs:
 
       - name: Install deps
         run: |
-          sudo apt-get update
+          sudo apt-get update 
           sudo apt-get install -y aptly
 
       - name: Download all debs
@@ -191,7 +191,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.PAGES_DIR }}
+          path: site
 
   deploy:
     needs: publish
