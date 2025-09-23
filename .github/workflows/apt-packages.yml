@@ -185,8 +185,8 @@ jobs:
               "$REPO_NAME" site
           done
 
-          gpg --armor --export "$KEYID" > site/pubkey.gpg"
-          touch site/.nojekyll"
+          gpg --armor --export "$KEYID" > site/pubkey.gpg
+          touch site/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
