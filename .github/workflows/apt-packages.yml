@@ -10,7 +10,7 @@ concurrency:
 
 env:
   COMPONENT: main
-  PAGES_DIR: site
+  PAGES_DIR: docs/apt
 
 jobs:
   matrix:
@@ -161,12 +161,12 @@ jobs:
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          rm -rf site && mkdir -p site
+          rm -rf docs/apt && mkdir -p docs/apt
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
-            "FileSystemPublishEndpoints": { "site": { "rootDir": "site", "linkMethod": "copy" } }
+            "FileSystemPublishEndpoints": { "docs/apt": { "rootDir": "docs/apt", "linkMethod": "copy" } }
           }
           JSON
 
@@ -178,31 +178,68 @@ jobs:
           find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
 
           for d in $DISTROS; do
-            aptly publish drop "$d" site || true
+            aptly publish drop "$d" docs/apt || true
             aptly publish repo -distribution="$d" \
               -architectures=amd64 \
               -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
-              "$REPO_NAME" site
+              "$REPO_NAME" docs/apt
           done
 
-          gpg --armor --export "$KEYID" > site/pubkey.gpg
-          touch site/.nojekyll
+          gpg --armor --export "$KEYID" > docs/apt/pubkey.gpg
+          touch docs/.nojekyll
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+      - name: Generate directory indexes for APT browser
+        run: |
+          # Update the apt index with actual file listing
+          for dist in docs/apt/*/; do
+            if [ -d "$dist" ] && [ "$(basename "$dist")" != "*" ]; then
+              cat > "$dist/index.html" <<'HTML'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Index of /apt/$(basename "$dist")/</title>
+            <style>
+              body { font-family: monospace; margin: 40px; background: #f5f5f5; }
+              .container { background: white; padding: 20px; border-radius: 8px; max-width: 1000px; margin: 0 auto; }
+              h1 { color: #667eea; }
+              table { width: 100%; border-collapse: collapse; }
+              th { background: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
+              td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+              a { color: #667eea; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Index of /apt/$(basename "$dist")/</h1>
+              <table>
+                <tr><th>Name</th><th>Size</th><th>Last Modified</th></tr>
+                <tr><td>📁 <a href="../">../</a></td><td>-</td><td>-</td></tr>
+          HTML
+              for f in "$dist"*; do
+                [ -e "$f" ] || continue
+                fname=$(basename "$f")
+                [ "$fname" = "index.html" ] && continue
+                if [ -d "$f" ]; then
+                  echo "<tr><td>📁 <a href=\"$fname/\">$fname/</a></td><td>-</td><td>$(date -r "$f" "+%Y-%m-%d %H:%M")</td></tr>" >> "$dist/index.html"
+                else
+                  size=$(du -h "$f" | cut -f1)
+                  echo "<tr><td>📄 <a href=\"$fname\">$fname</a></td><td>$size</td><td>$(date -r "$f" "+%Y-%m-%d %H:%M")</td></tr>" >> "$dist/index.html"
+                fi
+              done
+              echo "</table></div></body></html>" >> "$dist/index.html"
+            fi
+          done
 
-  deploy:
-    needs: publish
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Checkout existing main branch to preserve docs folder
+          git fetch origin
+          
+          # Commit the updated docs folder
+          git add docs/
+          git commit -m "Update APT repository in docs/apt" || echo "No changes to commit"
+          git push origin main
