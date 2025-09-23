@@ -1,6 +1,6 @@
 # KivotOS APT Repository
 
-### Packages: yazi (meta), yazi-fm, yazi-cli, hellwal
+### Packages: yazi-fm, yazi-cli, hellwal
 ### Supported: Debian trixie / amd64
 
 # Add the repo 
