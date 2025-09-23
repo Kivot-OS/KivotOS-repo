@@ -4,29 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KivotOS APT Repository</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* Catppuccin Latte (Light Theme) */
         :root {
-            --bg-gradient-start: #667eea;
-            --bg-gradient-end: #764ba2;
-            --bg-main: #ffffff;
-            --bg-card: #ffffff;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --border-color: #e1e4e8;
-            --code-bg: #f6f8fa;
-            --header-bg: rgba(255, 255, 255, 0.95);
+            --ctp-base: #eff1f5;
+            --ctp-mantle: #e6e9ef;
+            --ctp-crust: #dce0e8;
+            --ctp-surface0: #ccd0da;
+            --ctp-surface1: #bcc0cc;
+            --ctp-surface2: #acb0be;
+            --ctp-text: #4c4f69;
+            --ctp-subtext1: #5c5f77;
+            --ctp-subtext0: #6c6f85;
+            --ctp-blue: #1e66f5;
+            --ctp-mauve: #8839ef;
+            --ctp-pink: #ea76cb;
+            --ctp-lavender: #7287fd;
+            --ctp-sapphire: #209fb5;
+            --ctp-green: #40a02b;
+            
+            /* Applied colors */
+            --bg-gradient-start: var(--ctp-lavender);
+            --bg-gradient-end: var(--ctp-mauve);
+            --bg-main: var(--ctp-base);
+            --bg-card: var(--ctp-mantle);
+            --text-primary: var(--ctp-text);
+            --text-secondary: var(--ctp-subtext1);
+            --border-color: var(--ctp-surface0);
+            --code-bg: var(--ctp-crust);
+            --header-bg: rgba(239, 241, 245, 0.95);
+            --accent: var(--ctp-blue);
+            --accent-hover: var(--ctp-sapphire);
+            --success: var(--ctp-green);
         }
         
+        /* Catppuccin Mocha (Dark Theme) */
         [data-theme="dark"] {
-            --bg-gradient-start: #1a1b3a;
-            --bg-gradient-end: #2d1b3d;
-            --bg-main: #0d1117;
-            --bg-card: #161b22;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --border-color: #30363d;
-            --code-bg: #0d1117;
-            --header-bg: rgba(22, 27, 34, 0.95);
+            --ctp-base: #1e1e2e;
+            --ctp-mantle: #181825;
+            --ctp-crust: #11111b;
+            --ctp-surface0: #313244;
+            --ctp-surface1: #45475a;
+            --ctp-surface2: #585b70;
+            --ctp-text: #cdd6f4;
+            --ctp-subtext1: #bac2de;
+            --ctp-subtext0: #a6adc8;
+            --ctp-blue: #89b4fa;
+            --ctp-mauve: #cba6f7;
+            --ctp-pink: #f5c2e7;
+            --ctp-lavender: #b4befe;
+            --ctp-sapphire: #74c7ec;
+            --ctp-green: #a6e3a1;
+            
+            /* Applied colors */
+            --bg-gradient-start: var(--ctp-mauve);
+            --bg-gradient-end: var(--ctp-lavender);
+            --bg-main: var(--ctp-base);
+            --bg-card: var(--ctp-mantle);
+            --text-primary: var(--ctp-text);
+            --text-secondary: var(--ctp-subtext1);
+            --border-color: var(--ctp-surface0);
+            --code-bg: var(--ctp-crust);
+            --header-bg: rgba(30, 30, 46, 0.95);
+            --accent: var(--ctp-blue);
+            --accent-hover: var(--ctp-sapphire);
+            --success: var(--ctp-green);
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,7 +94,7 @@
             padding: 0 20px;
         }
         h1 {
-            color: #667eea;
+            color: var(--accent);
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
         }
@@ -90,7 +135,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
         .card h2 {
-            color: #667eea;
+            color: var(--accent);
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
@@ -117,23 +162,25 @@
             position: absolute;
             top: 0.5rem;
             right: 0.5rem;
-            background: #667eea;
-            color: white;
+            background: var(--accent);
+            color: var(--ctp-mantle);
             border: none;
             border-radius: 4px;
             padding: 0.25rem 0.5rem;
             cursor: pointer;
             font-size: 0.75rem;
+            font-family: 'Fira Mono', monospace;
             transition: background 0.2s;
         }
         .copy-btn:hover {
-            background: #5a67d8;
+            background: var(--accent-hover);
         }
         .copy-btn.copied {
-            background: #10b981;
+            background: var(--success);
         }
         code {
-            font-family: 'Monaco', 'Courier New', monospace;
+            font-family: 'Fira Mono', monospace;
+            font-weight: 400;
         }
         .package-grid {
             display: grid;
@@ -164,16 +211,17 @@
         }
         .browse-btn {
             display: inline-block;
-            background: #667eea;
-            color: white;
+            background: var(--accent);
+            color: var(--ctp-mantle);
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
             text-decoration: none;
             margin-top: 1rem;
             transition: background 0.3s;
+            font-weight: 600;
         }
         .browse-btn:hover {
-            background: #5a67d8;
+            background: var(--accent-hover);
         }
         .status {
             display: flex;
@@ -191,7 +239,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #10b981;
+            background: var(--success);
         }
         .footer {
             text-align: center;
@@ -285,7 +333,7 @@ sudo apt install yazi-cli yazi-fm hellwal</code></pre>
                     <span>Architecture: amd64</span>
                 </div>
             </div>
-            <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
                 Repository is automatically updated via GitHub Actions on the 1st of each month.
             </p>
         </div>
@@ -294,22 +342,22 @@ sudo apt install yazi-cli yazi-fm hellwal</code></pre>
             <h2><span class="icon">🔗</span> Resources</h2>
             <ul style="list-style: none; padding: 0;">
                 <li style="margin: 0.75rem 0;">
-                    <a href="https://github.com/dungdinhmanh/KivotOS-repo" style="color: #667eea; text-decoration: none;">
+                    <a href="https://github.com/dungdinhmanh/KivotOS-repo" style="color: var(--accent); text-decoration: none;">
                         → GitHub Repository
                     </a>
                 </li>
                 <li style="margin: 0.75rem 0;">
-                    <a href="./apt/trixie/" style="color: #667eea; text-decoration: none;">
+                    <a href="./apt/trixie/" style="color: var(--accent); text-decoration: none;">
                         → Browse Trixie Distribution
                     </a>
                 </li>
                 <li style="margin: 0.75rem 0;">
-                    <a href="./pubkey.gpg" style="color: #667eea; text-decoration: none;">
+                    <a href="./pubkey.gpg" style="color: var(--accent); text-decoration: none;">
                         → Download GPG Public Key
                     </a>
                 </li>
                 <li style="margin: 0.75rem 0;">
-                    <a href="https://github.com/dungdinhmanh/KivotOS-repo/actions" style="color: #667eea; text-decoration: none;">
+                    <a href="https://github.com/dungdinhmanh/KivotOS-repo/actions" style="color: var(--accent); text-decoration: none;">
                         → Build Status
                     </a>
                 </li>
