@@ -161,7 +161,7 @@ jobs:
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          rm -rf "$PAGES_DIR" && mkdir -p "$PAGES_DIR"
+          rm -rf site && mkdir -p site
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
@@ -185,8 +185,8 @@ jobs:
               "$REPO_NAME" site
           done
 
-          gpg --armor --export "$KEYID" > "$PAGES_DIR/pubkey.gpg"
-          touch "$PAGES_DIR/.nojekyll"
+          gpg --armor --export "$KEYID" > site/pubkey.gpg"
+          touch site/.nojekyll"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
