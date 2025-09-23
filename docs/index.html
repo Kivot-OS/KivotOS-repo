@@ -5,17 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KivotOS APT Repository</title>
     <style>
+        :root {
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --bg-main: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e1e4e8;
+            --code-bg: #f6f8fa;
+            --header-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        [data-theme="dark"] {
+            --bg-gradient-start: #1a1b3a;
+            --bg-gradient-end: #2d1b3d;
+            --bg-main: #0d1117;
+            --bg-card: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+            --code-bg: #0d1117;
+            --header-bg: rgba(22, 27, 34, 0.95);
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             min-height: 100vh;
-            color: #333;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
         .header {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--header-bg);
             padding: 2rem 0;
             box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: relative;
         }
         .container {
             max-width: 1200px;
@@ -28,8 +54,23 @@
             margin-bottom: 0.5rem;
         }
         .tagline {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 1.1rem;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
         }
         .main-content {
             display: grid;
@@ -43,7 +84,7 @@
             .main-content { grid-template-columns: 1fr; }
         }
         .card {
-            background: white;
+            background: var(--bg-card);
             border-radius: 12px;
             padding: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -56,17 +97,40 @@
             gap: 0.5rem;
         }
         .icon { font-size: 1.5rem; }
+        .code-block {
+            position: relative;
+            margin: 1rem 0;
+        }
         pre {
-            background: #f6f8fa;
-            border: 1px solid #e1e4e8;
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 1rem;
+            padding-right: 3rem;
             overflow-x: auto;
-            margin: 1rem 0;
             font-size: 0.85rem;
             white-space: pre-wrap;
             word-wrap: break-word;
             max-width: 100%;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover {
+            background: #5a67d8;
+        }
+        .copy-btn.copied {
+            background: #10b981;
         }
         code {
             font-family: 'Monaco', 'Courier New', monospace;
@@ -77,25 +141,25 @@
             margin-top: 1rem;
         }
         .package-item {
-            background: #f6f8fa;
+            background: var(--code-bg);
             padding: 1rem;
             border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: transform 0.2s;
+            border: 1px solid var(--border-color);
         }
         .package-item:hover {
             transform: translateX(5px);
-            background: #eef2f5;
         }
         .package-name {
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
         }
         .package-desc {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--text-secondary);
             margin-top: 0.25rem;
         }
         .browse-btn {
@@ -116,7 +180,7 @@
             gap: 2rem;
             margin-top: 1.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid #e1e4e8;
+            border-top: 1px solid var(--border-color);
         }
         .status-item {
             display: flex;
@@ -147,6 +211,7 @@
         <div class="container">
             <h1>🗂️ KivotOS Repository</h1>
             <p class="tagline">Custom APT packages for KivotOS distribution</p>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
         </div>
     </div>
 
@@ -183,18 +248,27 @@
             <h2><span class="icon">⚡</span> Quick Setup</h2>
             <p style="margin-bottom: 1rem;">Add KivotOS repository to your Debian/Ubuntu system:</p>
             
-            <h3 style="font-size: 1rem; margin-top: 1.5rem;">1. Add GPG Key</h3>
-            <pre><code>curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/apt/pubkey.gpg | \
-  sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
+            <h3 style="font-size: 1rem; margin-top: 1.5rem;">1. Import repo key</h3>
+            <div class="code-block">
+                <pre><code id="cmd1">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
+| sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
+                <button class="copy-btn" onclick="copyCommand('cmd1', this)">Copy</button>
+            </div>
             
-            <h3 style="font-size: 1rem;">2. Add Repository</h3>
-            <pre><code>echo "deb [signed-by=/usr/share/keyrings/kivotos.gpg] \
-https://dungdinhmanh.github.io/KivotOS-repo/apt/ trixie main" | \
-  sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
+            <h3 style="font-size: 1rem;">2. Add sources list (trixie/main)</h3>
+            <div class="code-block">
+                <pre><code id="cmd2">echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
+https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
+| sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
+                <button class="copy-btn" onclick="copyCommand('cmd2', this)">Copy</button>
+            </div>
             
-            <h3 style="font-size: 1rem;">3. Update & Install</h3>
-            <pre><code>sudo apt update
-sudo apt install yazi hellwal</code></pre>
+            <h3 style="font-size: 1rem;">3. Update & install</h3>
+            <div class="code-block">
+                <pre><code id="cmd3">sudo apt update
+sudo apt install yazi-cli yazi-fm hellwal</code></pre>
+                <button class="copy-btn" onclick="copyCommand('cmd3', this)">Copy</button>
+            </div>
         </div>
 
         <div class="card">
@@ -230,7 +304,7 @@ sudo apt install yazi hellwal</code></pre>
                     </a>
                 </li>
                 <li style="margin: 0.75rem 0;">
-                    <a href="./apt/pubkey.gpg" style="color: #667eea; text-decoration: none;">
+                    <a href="./pubkey.gpg" style="color: #667eea; text-decoration: none;">
                         → Download GPG Public Key
                     </a>
                 </li>
@@ -248,6 +322,40 @@ sudo apt install yazi hellwal</code></pre>
     </div>
 
     <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+        
+        // Copy command function
+        function copyCommand(id, button) {
+            const code = document.getElementById(id);
+            const text = code.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
         // Auto-refresh package list from APT metadata
         async function updatePackageList() {
             try {
