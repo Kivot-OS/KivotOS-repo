@@ -1,182 +1,116 @@
 <!doctype html>
-<html lang="en" class="">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>KivotOS APT Repository</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body class="font-sans antialiased">
-  <!-- Theme Toggle -->
-  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
-    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path class="sun-icon" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
-      <path class="moon-icon hidden" d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-    </svg>
-  </button>
-
-  <header class="hero-gradient py-12 border-b border-[rgb(var(--ctp-surface0))]">
-    <div class="max-w-6xl mx-auto px-6">
-      <h1 class="text-4xl font-bold mb-2 text-[rgb(var(--ctp-base))]">🗂️ KivotOS Repository</h1>
-      <p class="text-[rgb(var(--ctp-crust))] text-lg">Custom APT packages for KivotOS distribution</p>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>KivotOS Repository</h1>
+      <p>Custom APT packages for KivotOS distribution</p>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6 py-8">
-    <section class="section-spacing" aria-labelledby="pkgs-title">
-      <h2 id="pkgs-title" class="text-2xl font-bold mb-6 text-[rgb(var(--ctp-text))]">Available Packages</h2>
+  <main class="container">
+    <section aria-labelledby="pkgs-title">
+      <h2 id="pkgs-title">Available Packages</h2>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <article class="ctp-card">
-          <header class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold text-[rgb(var(--ctp-text))]">yazi</h3>
-            <span class="ctp-badge-primary">v25.5.31</span>
+      <div class="grid">
+        <article class="card">
+          <header class="card-head">
+            <h3>yazi</h3>
+            <span class="version">v25.5.31</span>
           </header>
-          <p class="text-ctp-muted">Blazing fast terminal file manager written in Rust</p>
+          <p>Blazing fast terminal file manager written in Rust</p>
         </article>
 
-        <article class="ctp-card">
-          <header class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold text-[rgb(var(--ctp-text))]">yazi-cli</h3>
-            <span class="ctp-badge-primary">v25.5.31</span>
+        <article class="card">
+          <header class="card-head">
+            <h3>yazi-cli</h3>
+            <span class="version">v25.5.31</span>
           </header>
-          <p class="text-ctp-muted">Command-line interface for Yazi file manager</p>
+          <p>Command-line interface for Yazi file manager</p>
         </article>
 
-        <article class="ctp-card">
-          <header class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold text-[rgb(var(--ctp-text))]">hellwal</h3>
-            <span class="ctp-badge-primary">v1.0.7</span>
+        <article class="card">
+          <header class="card-head">
+            <h3>hellwal</h3>
+            <span class="version">v1.0.7</span>
           </header>
-          <p class="text-ctp-muted">Pywal-like color palette generator written in C++</p>
+          <p>Pywal-like color palette generator written in C++</p>
         </article>
       </div>
 
-      <div class="mt-6">
-        <a class="ctp-btn" href="./apt/">Browse APT Repository →</a>
-      </div>
+      <p class="cta">
+        <a class="btn" href="https://dungdinhmanh.github.io/KivotOS-repo/">Browse APT Repository →</a>
+      </p>
     </section>
 
-    <section class="section-spacing" aria-labelledby="setup-title">
-      <h2 id="setup-title" class="text-2xl font-bold mb-6 text-[rgb(var(--ctp-text))]">Quick Setup</h2>
+    <section aria-labelledby="setup-title">
+      <h2 id="setup-title">Quick Setup</h2>
 
-      <div class="space-y-6">
-        <div>
-          <h3 class="text-lg font-semibold mb-3 text-[rgb(var(--ctp-text))]">1. Import repo key</h3>
-          <div class="relative">
-            <pre class="ctp-code"><code class="font-mono text-sm">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
+      <h3>1. Import repo key</h3>
+      <div class="code-wrap">
+        <pre><code>curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
 | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
-            <button class="ctp-copy absolute top-3 right-3" data-code="curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg">Copy</button>
-          </div>
-        </div>
+        <button class="copy-btn" data-target="key">Copy</button>
+      </div>
 
-        <div>
-          <h3 class="text-lg font-semibold mb-3 text-[rgb(var(--ctp-text))]">2. Add sources list (trixie/main)</h3>
-          <div class="relative">
-            <pre class="ctp-code"><code class="font-mono text-sm">echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
+      <h3>2. Add sources list (trixie/main)</h3>
+      <div class="code-wrap">
+        <pre><code>echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
 https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
 | sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
-            <button class="ctp-copy absolute top-3 right-3" data-code="echo &quot;deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] https://dungdinhmanh.github.io/KivotOS-repo/ trixie main&quot; | sudo tee /etc/apt/sources.list.d/kivotos.list">Copy</button>
-          </div>
-        </div>
+        <button class="copy-btn" data-target="sources">Copy</button>
+      </div>
 
-        <div>
-          <h3 class="text-lg font-semibold mb-3 text-[rgb(var(--ctp-text))]">3. Update &amp; install</h3>
-          <div class="relative">
-            <pre class="ctp-code"><code class="font-mono text-sm">sudo apt update
+      <h3>3. Update &amp; install</h3>
+      <div class="code-wrap">
+        <pre><code>sudo apt update
 sudo apt install yazi-cli yazi-fm hellwal</code></pre>
-            <button class="ctp-copy absolute top-3 right-3" data-code="sudo apt update &amp;&amp; sudo apt install yazi-cli yazi-fm hellwal">Copy</button>
-          </div>
-        </div>
+        <button class="copy-btn" data-target="install">Copy</button>
       </div>
     </section>
 
-    <section class="section-spacing" aria-labelledby="status-title">
-      <h2 id="status-title" class="text-2xl font-bold mb-6 text-[rgb(var(--ctp-text))]">Repository Status</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="ctp-card flex items-center justify-between">
-          <span class="text-ctp-muted">State</span>
-          <div class="flex items-center gap-2">
-            <span class="status-dot"></span>
-            <strong class="text-[rgb(var(--ctp-text))]">Active</strong>
-          </div>
-        </div>
-        <div class="ctp-card flex items-center justify-between">
-          <span class="text-ctp-muted">Distribution</span>
-          <strong class="text-[rgb(var(--ctp-text))]">Trixie</strong>
-        </div>
-        <div class="ctp-card flex items-center justify-between">
-          <span class="text-ctp-muted">Architecture</span>
-          <strong class="text-[rgb(var(--ctp-text))]">amd64</strong>
-        </div>
-      </div>
-      <p class="text-ctp-muted mt-4">Repository is automatically updated via GitHub Actions on the 1st of each month.</p>
+    <section aria-labelledby="status-title">
+      <h2 id="status-title">Repository Status</h2>
+      <ul class="kv">
+        <li><span>State</span><strong>Active</strong></li>
+        <li><span>Distribution</span><strong>Trixie</strong></li>
+        <li><span>Architecture</span><strong>amd64</strong></li>
+      </ul>
+      <p class="muted">Repository is automatically updated via GitHub Actions on the 1st of each month.</p>
     </section>
 
-    <section class="section-spacing" aria-labelledby="resources-title">
-      <h2 id="resources-title" class="text-2xl font-bold mb-6 text-[rgb(var(--ctp-text))]">Resources</h2>
-      <ul class="space-y-2">
-        <li><a class="ctp-link" href="https://github.com/dungdinhmanh/KivotOS-repo">→ GitHub Repository</a></li>
-        <li><a class="ctp-link" href="./apt/trixie/">→ Browse Trixie Distribution</a></li>
-        <li><a class="ctp-link" href="./pubkey.gpg">→ Download GPG Public Key</a></li>
-        <li><a class="ctp-link" href="https://github.com/dungdinhmanh/KivotOS-repo/actions">→ Build Status</a></li>
+    <section aria-labelledby="resources-title">
+      <h2 id="resources-title">Resources</h2>
+      <ul class="links">
+        <li><a href="https://github.com/dungdinhmanh/KivotOS-repo">→ GitHub Repository</a></li>
+        <li><a href="https://dungdinhmanh.github.io/KivotOS-repo/dists/trixie/main/">→ Browse Trixie Distribution</a></li>
+        <li><a href="https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg">→ Download GPG Public Key</a></li>
+        <li><a href="https://github.com/dungdinhmanh/KivotOS-repo/actions">→ Build Status</a></li>
       </ul>
     </section>
   </main>
 
-  <footer class="mt-12 border-t border-[rgb(var(--ctp-surface0))] py-6">
-    <div class="max-w-6xl mx-auto px-6 text-center">
-      <p class="text-ctp-muted">KivotOS Repository · Powered by <a class="ctp-link" href="https://pages.github.com">GitHub Pages</a></p>
+  <footer class="footer">
+    <div class="container">
+      <p>KivotOS Repository · Powered by <a href="https://pages.github.com">GitHub Pages</a></p>
     </div>
   </footer>
 
   <script>
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('theme-toggle');
-    const html = document.documentElement;
-    const sunIcon = themeToggle.querySelector('.sun-icon');
-    const moonIcon = themeToggle.querySelector('.moon-icon');
-
-    // Load saved theme or default to light
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    if (currentTheme === 'dark') {
-      html.classList.add('dark');
-      sunIcon.classList.add('hidden');
-      moonIcon.classList.remove('hidden');
-    }
-
-    themeToggle.addEventListener('click', () => {
-      const isDark = html.classList.contains('dark');
-      
-      if (isDark) {
-        html.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        sunIcon.classList.remove('hidden');
-        moonIcon.classList.add('hidden');
-      } else {
-        html.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        sunIcon.classList.add('hidden');
-        moonIcon.classList.remove('hidden');
-      }
-    });
-
-    // Copy to clipboard functionality
-    document.querySelectorAll('.ctp-copy').forEach((btn) => {
+    // Minimal copy-to-clipboard for each code block
+    document.querySelectorAll('.code-wrap').forEach((wrap) => {
+      const btn = wrap.querySelector('.copy-btn');
+      const code = wrap.querySelector('pre').innerText;
       btn.addEventListener('click', async () => {
-        const code = btn.getAttribute('data-code');
-        try { 
-          await navigator.clipboard.writeText(code); 
-          btn.textContent = 'Copied!';
-          btn.classList.add('copied');
-        }
-        catch { 
-          btn.textContent = 'Failed'; 
-        }
-        setTimeout(() => {
-          btn.textContent = 'Copy';
-          btn.classList.remove('copied');
-        }, 1500);
+        try { await navigator.clipboard.writeText(code); btn.textContent = 'Copied'; }
+        catch { btn.textContent = 'Copy failed'; }
+        setTimeout(() => (btn.textContent = 'Copy'), 1500);
       });
     });
   </script>
