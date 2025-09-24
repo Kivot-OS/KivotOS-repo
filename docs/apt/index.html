@@ -13,9 +13,8 @@
         <div class="header">
             <h1>📦 KivotOS APT Repository</h1>
             <div class="breadcrumb">Index of /apt/</div>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
         </div>
-
+        
         <div class="content">
             <div class="info-box">
                 <strong>Repository Usage:</strong>
@@ -50,10 +49,10 @@
 
         function renderFileList() {
             const tbody = document.querySelector('#fileList tbody');
-
+            
             // Keep the parent directory link
             let html = tbody.innerHTML;
-
+            
             // Add directories first
             files.filter(f => f.type === 'directory').forEach(file => {
                 html += `
@@ -64,7 +63,7 @@
                     </tr>
                 `;
             });
-
+            
             // Add files
             files.filter(f => f.type === 'file').forEach(file => {
                 html += `
@@ -75,7 +74,7 @@
                     </tr>
                 `;
             });
-
+            
             tbody.innerHTML = html;
         }
 
