@@ -23,104 +23,113 @@
     </div>
 
     <div class="main-content">
-        <div class="card">
-            <h2><span class="icon">📦</span> Available Packages</h2>
-            <div class="package-grid">
-                <div class="package-item">
-                    <div>
-                        <div class="package-name">yazi-fm</div>
-                        <div class="package-desc">Blazing fast terminal file manager written in Rust</div>
-                    </div>
-                    <span>v25.5.31</span>
-                </div>
-                <div class="package-item">
-                    <div>
-                        <div class="package-name">yazi-cli</div>
-                        <div class="package-desc">Command-line interface for Yazi file manager</div>
-                    </div>
-                    <span>v25.5.31</span>
-                </div>
-                <div class="package-item">
-                    <div>
-                        <div class="package-name">hellwal</div>
-                        <div class="package-desc">Pywal-like color palette generator written in C++</div>
-                    </div>
-                    <span>v1.0.7</span>
-                </div>
-            </div>
-            <a href="./apt/" class="browse-btn">Browse APT Repository →</a>
-        </div>
+        <!-- Top Row: Setup + Packages -->
+        <div class="dashboard-row primary">
+            <div class="dashboard-col-2">
+                <div class="card quick-setup">
+                    <h2><span class="icon">⚡</span> Quick Setup</h2>
+                    <p>Add KivotOS repository to your Debian/Ubuntu system:</p>
 
-        <div class="card quick-setup">
-            <h2><span class="icon">⚡</span> Quick Setup</h2>
-            <p>Add KivotOS repository to your Debian/Ubuntu system:</p>
-
-            <h3>1. Import repo key</h3>
-            <div class="code-block">
-                <pre><code id="cmd1">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
+                    <h3>1. Import repo key</h3>
+                    <div class="code-block">
+                        <pre><code id="cmd1">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/docs/pubkey.gpg \
 | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
-                <button class="copy-btn" onclick="copyCommand('cmd1', this)">Copy</button>
-            </div>
+                        <button class="copy-btn" onclick="copyCommand('cmd1', this)">Copy</button>
+                    </div>
 
-            <h3>2. Add sources list (trixie/main)</h3>
-            <div class="code-block">
-                <pre><code id="cmd2">echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
-https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
+                    <h3>2. Add sources list (trixie/main)</h3>
+                    <div class="code-block">
+                        <pre><code id="cmd2">echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
+https://dungdinhmanh.github.io/KivotOS-repo/docs trixie main" \
 | sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
-                <button class="copy-btn" onclick="copyCommand('cmd2', this)">Copy</button>
-            </div>
+                        <button class="copy-btn" onclick="copyCommand('cmd2', this)">Copy</button>
+                    </div>
 
-            <h3>3. Update & install</h3>
-            <div class="code-block">
-                <pre><code id="cmd3">sudo apt update
+                    <h3>3. Update & install</h3>
+                    <div class="code-block">
+                        <pre><code id="cmd3">sudo apt update
 sudo apt install yazi-cli yazi-fm hellwal</code></pre>
-                <button class="copy-btn" onclick="copyCommand('cmd3', this)">Copy</button>
+                        <button class="copy-btn" onclick="copyCommand('cmd3', this)">Copy</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-col-1">
+                <div class="card">
+                    <h2><span class="icon">📦</span> Available Packages</h2>
+                    <div class="package-grid">
+                        <div class="package-item">
+                            <div>
+                                <div class="package-name">yazi-fm</div>
+                                <div class="package-desc">Blazing fast terminal file manager written in Rust</div>
+                            </div>
+                            <span>v25.5.31</span>
+                        </div>
+                        <div class="package-item">
+                            <div>
+                                <div class="package-name">yazi-cli</div>
+                                <div class="package-desc">Command-line interface for Yazi file manager</div>
+                            </div>
+                            <span>v25.5.31</span>
+                        </div>
+                        <div class="package-item">
+                            <div>
+                                <div class="package-name">hellwal</div>
+                                <div class="package-desc">Pywal-like color palette generator written in C++</div>
+                            </div>
+                            <span>v1.0.7</span>
+                        </div>
+                    </div>
+                    <a href="./apt/" class="browse-btn">Browse APT Repository →</a>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <h2><span class="icon">📊</span> Repository Status</h2>
-            <div class="status">
-                <div class="status-item">
-                    <span class="status-dot"></span>
-                    <span>Active</span>
-                </div>
-                <div class="status-item">
-                    <span>Distribution: Trixie</span>
-                </div>
-                <div class="status-item">
-                    <span>Architecture: amd64</span>
+        <!-- Bottom Row: Status + Resources -->
+        <div class="dashboard-row">
+            <div class="dashboard-col-1">
+                <div class="card compact-status">
+                    <h2><span class="icon">📊</span> Repository Status</h2>
+                    <div class="status-graph">
+                        <img src="https://raw.githubusercontent.com/dungdinhmanh/KivotOS-status/refs/heads/master/graphs/kivot-os-repository/response-time.png" alt="KivotOS Repository Response Time Graph">
+                    </div>
+                    <div class="status-details">
+                        <p><strong>Overall uptime:</strong> <span id="uptime-status">Loading...</span></p>
+                        <p><strong>Average response time:</strong> <span id="response-time-status">Loading...</span></p>
+                    </div>
+                    <div class="cta">
+                        <a href="https://dungdinhmanh.github.io/KivotOS-status/" class="btn" target="_blank">View Full Status Page →</a>
+                    </div>
                 </div>
             </div>
-            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                Repository is automatically updated via GitHub Actions on the 1st of each month.
-            </p>
-        </div>
-
-        <div class="card">
-            <h2><span class="icon">🔗</span> Resources</h2>
-            <ul style="list-style: none; padding: 0;">
-                <li style="margin: 0.75rem 0;">
-                    <a href="https://github.com/dungdinhmanh/KivotOS-repo" style="color: var(--accent); text-decoration: none;">
-                        → GitHub Repository
-                    </a>
-                </li>
-                <li style="margin: 0.75rem 0;">
-                    <a href="./apt/trixie/" style="color: var(--accent); text-decoration: none;">
-                        → Browse Trixie Distribution
-                    </a>
-                </li>
-                <li style="margin: 0.75rem 0;">
-                    <a href="./pubkey.gpg" style="color: var(--accent); text-decoration: none;">
-                        → Download GPG Public Key
-                    </a>
-                </li>
-                <li style="margin: 0.75rem 0;">
-                    <a href="https://github.com/dungdinhmanh/KivotOS-repo/actions" style="color: var(--accent); text-decoration: none;">
-                        → Build Status
-                    </a>
-                </li>
-            </ul>
+            
+            <div class="dashboard-col-1">
+                <div class="card">
+                    <h2><span class="icon">🔗</span> Resources</h2>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin: 0.75rem 0;">
+                            <a href="https://github.com/dungdinhmanh/KivotOS-repo" style="color: var(--accent); text-decoration: none;">
+                                → GitHub Repository
+                            </a>
+                        </li>
+                        <li style="margin: 0.75rem 0;">
+                            <a href="./apt/trixie/" style="color: var(--accent); text-decoration: none;">
+                                → Browse Trixie Distribution
+                            </a>
+                        </li>
+                        <li style="margin: 0.75rem 0;">
+                            <a href="./pubkey.gpg" style="color: var(--accent); text-decoration: none;">
+                                → Download GPG Public Key
+                            </a>
+                        </li>
+                        <li style="margin: 0.75rem 0;">
+                            <a href="https://github.com/dungdinhmanh/KivotOS-repo/actions" style="color: var(--accent); text-decoration: none;">
+                                → Build Status
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -132,37 +141,79 @@ sudo apt install yazi-cli yazi-fm hellwal</code></pre>
         // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
         const html = document.documentElement;
-        
+
         // Load saved theme
         const savedTheme = localStorage.getItem('theme') || 'light';
         html.setAttribute('data-theme', savedTheme);
 
-        
+
         themeToggle.addEventListener('click', () => {
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
 
+            updateStatusColors();
         });
-        
+
         // Copy command function
         function copyCommand(id, button) {
             const code = document.getElementById(id);
             const text = code.textContent;
-            
+
             navigator.clipboard.writeText(text).then(() => {
                 button.textContent = 'Copied!';
                 button.classList.add('copied');
-                
+
                 setTimeout(() => {
                     button.textContent = 'Copy';
                     button.classList.remove('copied');
                 }, 2000);
             });
         }
-        
+
+
+        function updateStatusColors() {
+            const uptimeUrl = 'https://raw.githubusercontent.com/dungdinhmanh/KivotOS-status/master/api/kivot-os-repository/uptime.json';
+            const responseTimeUrl = 'https://raw.githubusercontent.com/dungdinhmanh/KivotOS-status/master/api/kivot-os-repository/response-time.json';
+
+            const uptimeElement = document.getElementById('uptime-status');
+            const responseTimeElement = document.getElementById('response-time-status');
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+
+            fetch(uptimeUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.message) {
+                        uptimeElement.textContent = data.message;
+                        uptimeElement.style.color = data.color || 'var(--text-primary)';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching uptime status:', error);
+                    uptimeElement.textContent = 'N/A';
+                });
+
+            fetch(responseTimeUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.message) {
+                        responseTimeElement.textContent = data.message;
+                        if (currentTheme === 'dark') {
+                            responseTimeElement.style.color = '#a6e3a1'; // Catppuccin Mocha Green
+                        } else {
+                            responseTimeElement.style.color = '#40a02b'; // Catppuccin Latte Green
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching response time status:', error);
+                    responseTimeElement.textContent = 'N/A';
+                });
+        }
+
+        updateStatusColors();
         // Auto-refresh package list from APT metadata
         async function updatePackageList() {
             try {
