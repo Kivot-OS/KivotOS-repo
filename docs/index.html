@@ -18,7 +18,7 @@
         <div class="container">
             <h1>🗂️ KivotOS Repository</h1>
             <p class="tagline">Custom APT packages for KivotOS distribution</p>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme"><span class="theme-toggle-slider"></span></button>
         </div>
     </div>
 
@@ -136,7 +136,7 @@ sudo apt install yazi-cli yazi-fm hellwal</code></pre>
         // Load saved theme
         const savedTheme = localStorage.getItem('theme') || 'light';
         html.setAttribute('data-theme', savedTheme);
-        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
         
         themeToggle.addEventListener('click', () => {
             const currentTheme = html.getAttribute('data-theme');
@@ -144,7 +144,7 @@ sudo apt install yazi-cli yazi-fm hellwal</code></pre>
             
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+
         });
         
         // Copy command function

@@ -18,16 +18,44 @@
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 50px;
-  padding: 0.5rem;
+  padding: 2px;
   cursor: pointer;
-  font-size: 1.25rem;
-  line-height: 1;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition: background-color 0.2s ease;
+  width: 60px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+[data-theme='light'] .theme-toggle {
+    background-color: var(--bg-main);
 }
 
 .theme-toggle:hover {
-  transform: translateY(-50%) scale(1.1);
   background-color: var(--code-bg);
+}
+
+.theme-toggle-slider {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+[data-theme='light'] .theme-toggle-slider {
+  transform: translateX(0);
+  background-image: url('../assets/sun.svg');
+  background-color: var(--ctp-base);
+}
+
+[data-theme='dark'] .theme-toggle-slider {
+  transform: translateX(30px);
+  background-image: url('../assets/moon.svg');
+  background-color: var(--ctp-mauve);
 }
 
 .card {

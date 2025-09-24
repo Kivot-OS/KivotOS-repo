@@ -36,7 +36,7 @@
   --border-color: var(--ctp-surface0);
   --code-bg: var(--ctp-crust);
   --header-bg: rgba(30, 30, 46, 0.95);
-  --accent: var(--ctp-blue);
+  --accent: var(--ctp-mauve);
   --accent-hover: var(--ctp-sapphire);
   --success: var(--ctp-green);
 }

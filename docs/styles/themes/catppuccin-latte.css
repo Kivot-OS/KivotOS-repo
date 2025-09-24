@@ -34,9 +34,9 @@
   --text-primary: var(--ctp-text);
   --text-secondary: var(--ctp-subtext1);
   --border-color: var(--ctp-surface0);
-  --code-bg: var(--ctp-surface1);
-  --header-bg: rgba(239, 241, 245, 0.85);
-  --accent: var(--ctp-blue);
+  --code-bg: var(--ctp-surface0);
+  --header-bg: var(--ctp-mantle);
+  --accent: var(--ctp-lavender);
   --accent-hover: var(--ctp-sapphire);
   --success: var(--ctp-green);
 }
