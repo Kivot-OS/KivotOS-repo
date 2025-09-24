@@ -1,12 +1,12 @@
 :root {
-  --bg: #0b0c10;
-  --panel: #111318;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --primary: #38bdf8;
-  --accent: #22c55e;
-  --card: #0f1115;
-  --border: #1f2937;
+  --bg: var(--ctp-base);
+  --panel: var(--ctp-mantle);
+  --text: var(--ctp-text);
+  --muted: var(--ctp-subtext1);
+  --primary: var(--ctp-blue);
+  --accent: var(--ctp-green);
+  --card: var(--ctp-crust);
+  --border: var(--ctp-surface0);
 }
 
 * { box-sizing: border-box; }

@@ -1,0 +1,45 @@
+/* Page-specific Styles */
+.quick-setup p {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.quick-setup h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.quick-setup h3:first-of-type {
+    margin-top: 0;
+}
+
+.repo-status p {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.resources ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 1.5rem;
+}
+
+.resources li {
+    margin: 0.5rem 0;
+}
+
+.resources a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.resources a:hover {
+    color: var(--accent-hover);
+}
+

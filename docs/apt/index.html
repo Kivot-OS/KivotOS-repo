@@ -4,87 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KivotOS APT Repository Browser</title>
-    <style>
-        body {
-            font-family: monospace;
-            margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-        }
-        h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        .breadcrumb {
-            margin-top: 10px;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th {
-            background: #f0f0f0;
-            padding: 10px;
-            text-align: left;
-            border-bottom: 2px solid #ddd;
-            font-weight: bold;
-        }
-        td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #eee;
-        }
-        tr:hover {
-            background: #f9f9f9;
-        }
-        a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .size {
-            text-align: right;
-            color: #666;
-        }
-        .modified {
-            color: #666;
-        }
-        .icon {
-            margin-right: 5px;
-        }
-        .info-box {
-            background: #e8f4fd;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-        .info-box pre {
-            background: #f6f8fa;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-            margin: 10px 0 0 0;
-        }
-    </style>
+    <link rel="stylesheet" href="../styles/themes/catppuccin-latte.css">
+    <link rel="stylesheet" href="../styles/themes/catppuccin-mocha.css">
+    <link rel="stylesheet" href="../styles/apt.css">
 </head>
 <body>
     <div class="container">
