@@ -2,7 +2,7 @@
 .header {
   position: sticky;
   top: 0;
-  padding: 1rem 0;
+  padding: clamp(0.75rem, 2vw, 1rem) 0;
   background-color: var(--header-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -13,7 +13,7 @@
 .theme-toggle {
   position: absolute;
   top: 50%;
-  right: 1.5rem;
+  right: clamp(1rem, 3vw, 1.5rem);
   transform: translateY(-50%);
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -21,8 +21,8 @@
   padding: 2px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  width: 60px;
-  height: 30px;
+  width: clamp(50px, 12vw, 60px);
+  height: clamp(25px, 6vw, 30px);
   display: flex;
   align-items: center;
 }
@@ -37,11 +37,11 @@
 
 .theme-toggle-slider {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: clamp(20px, 5vw, 24px);
+  height: clamp(20px, 5vw, 24px);
   border-radius: 50%;
   transition: transform 0.3s ease, background-color 0.3s ease;
-  background-size: 16px 16px;
+  background-size: clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px);
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -53,7 +53,7 @@
 }
 
 [data-theme='dark'] .theme-toggle-slider {
-  transform: translateX(30px);
+  transform: translateX(clamp(25px, 6vw, 30px));
   background-image: url('../assets/moon.svg');
   background-color: var(--ctp-mauve);
 }
@@ -61,9 +61,12 @@
 .card {
   background-color: var(--bg-card);
   border-radius: 12px;
-  padding: 2rem;
+  padding: clamp(1.5rem, 4vw, 2rem);
   border: 1px solid var(--border-color);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -73,11 +76,11 @@
 
 .card h2 {
   color: var(--accent);
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 3vw, 1.5rem);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.5rem;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
   font-weight: 600;
 }
 
@@ -85,30 +88,32 @@
 
 .code-block {
   position: relative;
-  margin: 1.5rem 0;
+  margin: 1rem 0;
 }
 
 pre {
   background-color: var(--code-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.25rem);
   overflow-x: auto;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   line-height: 1.5;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .copy-btn {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: clamp(0.5rem, 2vw, 0.75rem);
+  right: clamp(0.5rem, 2vw, 0.75rem);
   background-color: var(--accent);
   color: var(--bg-main);
   border: none;
   border-radius: 6px;
-  padding: 0.35rem 0.75rem;
+  padding: clamp(0.25rem, 1vw, 0.35rem) clamp(0.5rem, 2vw, 0.75rem);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   font-family: 'Fira Mono', monospace;
   transition: background-color 0.2s ease;
 }
@@ -133,13 +138,15 @@ code {
 
 .package-item {
   background-color: var(--code-bg);
-  padding: 1rem 1.25rem;
+  padding: clamp(0.75rem, 3vw, 1rem) clamp(1rem, 3vw, 1.25rem);
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   border: 1px solid var(--border-color);
   transition: transform 0.2s ease, border-color 0.2s ease;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .package-item:hover {
@@ -162,12 +169,15 @@ code {
   display: inline-block;
   background-color: var(--accent);
   color: var(--bg-main);
-  padding: 0.75rem 1.5rem;
+  padding: clamp(0.75rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem);
   border-radius: 8px;
   text-decoration: none;
-  margin-top: 1.5rem;
+  margin-top: clamp(1rem, 3vw, 1.5rem);
   transition: background-color 0.3s ease, transform 0.2s ease;
   font-weight: 600;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  text-align: center;
+  width: 100%;
 }
 
 .browse-btn:hover {
@@ -178,9 +188,9 @@ code {
 .status {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  margin-top: clamp(1rem, 3vw, 1.5rem);
+  padding-top: clamp(1rem, 3vw, 1.5rem);
   border-top: 1px solid var(--border-color);
 }
 
@@ -188,7 +198,9 @@ code {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  flex: 1;
+  min-width: fit-content;
 }
 
 .status-dot {

@@ -1,6 +1,10 @@
 name: apt-packages
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'packages.json'
+      - '.github/workflows/apt-packages.yml'
   schedule:
     - cron: "0 3 1 * *"
 
@@ -156,90 +160,209 @@ jobs:
         env:
           DISTROS: ${{ needs.matrix.outputs.distros }}
           COMPONENT: ${{ env.COMPONENT }}
-          PAGES_DIR: ${{ env.PAGES_DIR }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          rm -rf docs/apt && mkdir -p docs/apt
+          
+          # Clean and setup directories
+          rm -rf docs/apt
+          mkdir -p docs/apt
+          
+          # Configure aptly
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
-            "FileSystemPublishEndpoints": { "docs/apt": { "rootDir": "docs/apt", "linkMethod": "copy" } }
+            "FileSystemPublishEndpoints": {
+              "docs/apt": {
+                "rootDir": "docs/apt",
+                "linkMethod": "copy"
+              }
+            }
           }
           JSON
 
+          # Import GPG key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
 
+          # Create and populate repo
           REPO_NAME="kivotos"
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
+          
+          # Add all debs to repo
           find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
 
-          for d in $DISTROS; do
-            aptly publish drop "$d" docs/apt || true
-            aptly publish repo -distribution="$d" \
+          # Publish for each distro
+          for distro in $DISTROS; do
+            # Drop old publication if exists
+            aptly publish drop "$distro" filesystem:docs/apt: || true
+            
+            # Publish repo to docs/apt/
+            aptly publish repo \
+              -distribution="$distro" \
               -architectures=amd64 \
-              -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" \
-              "$REPO_NAME" docs/apt
+              -gpg-key="$KEYID" \
+              -passphrase="$GPG_PASSPHRASE" \
+              "$REPO_NAME" filesystem:docs/apt:
           done
 
+          # Export public key to both locations
           gpg --armor --export "$KEYID" > docs/apt/pubkey.gpg
+          gpg --armor --export "$KEYID" > docs/pubkey.gpg
+          
+          # Mark as non-Jekyll site
           touch docs/.nojekyll
 
-      - name: Generate directory indexes for APT browser
+      - name: Generate Debian-style directory indexes
         run: |
-          # Update the apt index with actual file listing
-          for dist in docs/apt/*/; do
-            if [ -d "$dist" ] && [ "$(basename "$dist")" != "*" ]; then
-              cat > "$dist/index.html" <<'HTML'
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Index of /apt/$(basename "$dist")/</title>
-            <style>
-              body { font-family: monospace; margin: 40px; background: #f5f5f5; }
-              .container { background: white; padding: 20px; border-radius: 8px; max-width: 1000px; margin: 0 auto; }
-              h1 { color: #667eea; }
-              table { width: 100%; border-collapse: collapse; }
-              th { background: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
-              td { padding: 8px 10px; border-bottom: 1px solid #eee; }
-              a { color: #667eea; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Index of /apt/$(basename "$dist")/</h1>
-              <table>
-                <tr><th>Name</th><th>Size</th><th>Last Modified</th></tr>
-                <tr><td>📁 <a href="../">../</a></td><td>-</td><td>-</td></tr>
-          HTML
-              for f in "$dist"*; do
-                [ -e "$f" ] || continue
-                fname=$(basename "$f")
-                [ "$fname" = "index.html" ] && continue
-                if [ -d "$f" ]; then
-                  echo "<tr><td>📁 <a href=\"$fname/\">$fname/</a></td><td>-</td><td>$(date -r "$f" "+%Y-%m-%d %H:%M")</td></tr>" >> "$dist/index.html"
-                else
-                  size=$(du -h "$f" | cut -f1)
-                  echo "<tr><td>📄 <a href=\"$fname\">$fname</a></td><td>$size</td><td>$(date -r "$f" "+%Y-%m-%d %H:%M")</td></tr>" >> "$dist/index.html"
-                fi
-              done
-              echo "</table></div></body></html>" >> "$dist/index.html"
+          # Function to generate index.html for a directory
+          generate_index() {
+            local dir="$1"
+            local url_path="${dir#docs}"
+            
+            cat > "${dir}/index.html" <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Index of /KivotOS-repo${url_path}/</title>
+  <style>
+    body { 
+      font-family: monospace; 
+      background: #fff; 
+      color: #000; 
+      margin: 0; 
+      padding: 8px;
+    }
+    h1 { 
+      font-size: 1.2em; 
+    }
+    pre {
+      margin: 0;
+    }
+    a { 
+      color: #0000ee; 
+      text-decoration: none;
+    }
+    a:visited { 
+      color: #551a8b;
+    }
+    a:hover { 
+      text-decoration: underline;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #888;
+    }
+  </style>
+</head>
+<body>
+<h1>Index of /KivotOS-repo${url_path}/</h1>
+<hr>
+<pre>
+EOF
+            
+            # Parent directory link
+            if [ "$dir" != "docs/apt" ]; then
+              printf "%-50s %19s %s\n" "<a href=\"../\">../</a>" "-" "-" >> "${dir}/index.html"
             fi
+            
+            # List directories first
+            for item in "$dir"/*/; do
+              [ -d "$item" ] || continue
+              name=$(basename "$item")
+              [ "$name" = "*" ] && continue
+              mtime=$(stat -c '%Y' "$item" 2>/dev/null || stat -f '%m' "$item" 2>/dev/null || echo 0)
+              if [ "$mtime" -ne 0 ]; then
+                date_str=$(date -d "@$mtime" '+%d-%b-%Y %H:%M' 2>/dev/null || date -r "$mtime" '+%d-%b-%Y %H:%M' 2>/dev/null || echo "-")
+              else
+                date_str="-"
+              fi
+              printf "%-50s %19s %s\n" "<a href=\"${name}/\">${name}/</a>" "-" "$date_str" >> "${dir}/index.html"
+            done
+            
+            # Then list files
+            for item in "$dir"/*; do
+              [ -f "$item" ] || continue
+              name=$(basename "$item")
+              [ "$name" = "index.html" ] && continue
+              
+              size_bytes=$(stat -c '%s' "$item" 2>/dev/null || stat -f '%z' "$item" 2>/dev/null || echo 0)
+              if [ $size_bytes -eq 0 ]; then
+                size="-"
+              elif [ $size_bytes -lt 1024 ]; then
+                size="${size_bytes}"
+              elif [ $size_bytes -lt 1048576 ]; then
+                size="$(( size_bytes / 1024 ))K"
+              else
+                size="$((size_bytes / 1048576 )).$((size_bytes % 1048576 * 10 / 1048576))M"
+              fi
+              
+              mtime=$(stat -c '%Y' "$item" 2>/dev/null || stat -f '%m' "$item" 2>/dev/null || echo 0)
+              if [ "$mtime" -ne 0 ]; then
+                date_str=$(date -d "@$mtime" '+%d-%b-%Y %H:%M' 2>/dev/null || date -r "$mtime" '+%d-%b-%Y %H:%M' 2>/dev/null || echo "-")
+              else
+                date_str="-"
+              fi
+              
+              printf "%-50s %19s %s\n" "<a href=\"${name}\">${name}</a>" "$size" "$date_str" >> "${dir}/index.html"
+            done
+            
+            cat >> "${dir}/index.html" <<'EOF'
+</pre>
+<hr>
+</body>
+</html>
+EOF
+          }
+          
+          # Generate indexes for APT repository structure
+          # APT root directory
+          [ -d "docs/apt" ] && generate_index "docs/apt"
+          
+          # Distribution directories (e.g., trixie)
+          for dist in docs/apt/dists/*/; do
+            [ -d "$dist" ] && [ "$(basename "$dist")" != "*" ] && generate_index "${dist%/}"
+            
+            # Component directories (e.g., main)
+            for comp in "$dist"*/; do
+              [ -d "$comp" ] && [ "$(basename "$comp")" != "*" ] && generate_index "${comp%/}"
+              
+              # Binary directories
+              for bin in "$comp"binary-*/; do
+                [ -d "$bin" ] && [ "$(basename "$bin")" != "*" ] && generate_index "${bin%/}"
+              done
+            done
           done
+          
+          # Pool directories
+          if [ -d "docs/apt/pool" ]; then
+            generate_index "docs/apt/pool"
+            for comp in docs/apt/pool/*/; do
+              [ -d "$comp" ] && [ "$(basename "$comp")" != "*" ] && generate_index "${comp%/}"
+              
+              # Package letter directories
+              for letter in "$comp"*/; do
+                [ -d "$letter" ] && [ "$(basename "$letter")" != "*" ] && generate_index "${letter%/}"
+                
+                # Package name directories  
+                for pkg in "$letter"*/; do
+                  [ -d "$pkg" ] && [ "$(basename "$pkg")" != "*" ] && generate_index "${pkg%/}"
+                done
+              done
+            done
+          fi
 
-      - name: Deploy to GitHub Pages
+      - name: Commit and push to main branch
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # Checkout existing main branch to preserve docs folder
-          git fetch origin
-          
-          # Commit the updated docs folder
-          git add docs/
-          git commit -m "Update APT repository in docs/apt" || echo "No changes to commit"
-          git push origin main
+          # Add and commit changes
+          git add -A docs/
+          git diff --staged --quiet || {
+            git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]" 
+            git push origin main
+          } || echo "No changes to commit"

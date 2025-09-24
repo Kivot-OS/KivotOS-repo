@@ -1,14 +1,14 @@
 /* Page-specific Styles */
 .quick-setup p {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: var(--text-secondary);
 }
 
 .quick-setup h3 {
-    font-size: 1.125rem;
+    font-size: clamp(1rem, 3vw, 1.125rem);
     font-weight: 600;
-    margin-top: 2rem;
-    margin-bottom: 0.5rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.4rem;
     color: var(--text-primary);
 }
 
@@ -47,30 +47,49 @@
 
 
 .status-graph {
-    margin: 1rem 0;
+    margin: 0.75rem 0;
     text-align: center;
 }
 
 .status-graph img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
+    max-height: 120px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
 }
 
-
 .status-details {
-    margin-top: 1.5rem;
+    margin-top: 0.75rem;
     text-align: center;
     color: var(--text-secondary);
 }
 
 .status-details p {
-    margin: 0.25rem 0;
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
 }
 
 .status-details strong {
     color: var(--text-primary);
+}
+
+.compact-status {
+    padding: clamp(1rem, 3vw, 1.5rem) !important;
+}
+
+.compact-status h2 {
+    font-size: clamp(1.1rem, 3vw, 1.25rem) !important;
+    margin-bottom: clamp(0.75rem, 2vw, 1rem) !important;
+}
+
+.compact-status .cta {
+    margin-top: clamp(0.75rem, 2vw, 1rem);
+}
+
+.compact-status .btn {
+    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.25rem);
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 .repo-status-card {
     grid-column: 1 / -1; /* Span full width */

@@ -6,14 +6,14 @@
 # Add the repo 
 ## 1) Import repo key
 ```bash
-curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
+curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/docs/pubkey.gpg \
 | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg
 ```
 
 ## 2) Add sources list (trixie/main)
 ```bash
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
-https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
+https://dungdinhmanh.github.io/KivotOS-repo/docs trixie main" \
 | sudo tee /etc/apt/sources.list.d/kivotos.list
 ```
 
