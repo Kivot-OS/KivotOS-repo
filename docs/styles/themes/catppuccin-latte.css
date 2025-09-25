@@ -26,6 +26,7 @@
   --ctp-surface0: #ccd0da;
   --ctp-base: #eff1f5;
   --ctp-mantle: #e6e9ef;
+  --ctp-mantle-rgb: 230, 233, 239;
   --ctp-crust: #dce0e8;
 
   /* Applied colors */
@@ -37,7 +38,6 @@
   --code-bg: var(--ctp-surface0);
   --header-bg: var(--ctp-mantle);
   --accent: var(--ctp-lavender);
-  --accent-hover: var(--ctp-sapphire);
+  --accent-hover: var(--ctp-sky);
   --success: var(--ctp-green);
 }
-

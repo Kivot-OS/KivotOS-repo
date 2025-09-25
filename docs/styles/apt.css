@@ -1,118 +1,289 @@
-/* APT Page Styles */
+/* General Setup */
 :root {
     --primary-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --mono-font: 'Fira Mono', monospace;
 }
 
-* { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 body {
     font-family: var(--primary-font);
     background-color: var(--ctp-base);
     color: var(--ctp-text);
     margin: 0;
-    padding: 2rem;
+    line-height: 1.6;
 }
 
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    background-color: var(--ctp-mantle);
-    border: 1px solid var(--ctp-surface0);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    overflow: hidden;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
 }
 
+/* Header */
 .header {
-    background-color: var(--ctp-crust);
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--ctp-surface0);
+    position: sticky;
+    top: 1rem;
+    z-index: 10;
+    background-color: rgba(var(--ctp-mantle-rgb), 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--ctp-surface0);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    /* The sticky header is inside the container, so it needs to be positioned relative to it */
 }
 
-h1 {
-    margin: 0;
-    font-size: 1.5rem;
+.container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-link {
+    color: var(--ctp-text);
+    display: flex; /* To center the SVG inside */
+    align-items: center;
+    transition: color 0.2s ease-in-out;
+}
+
+.back-link:hover {
     color: var(--ctp-mauve);
 }
 
-.breadcrumb {
+[data-theme="light"] .back-link:hover {
+    color: var(--ctp-lavender);
+}
+
+.header-content h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    color: var(--ctp-mauve);
+}
+
+[data-theme="light"] .header-content h1 {
+    color: var(--ctp-lavender);
+}
+
+[data-theme="dark"] .header-content h1 {
+    color: var(--ctp-mauve);
+}
+
+.header-content .subtitle {
+    color: var(--ctp-subtext1);
     margin-top: 0.25rem;
-    font-family: var(--mono-font);
-    color: var(--ctp-subtext0);
-    font-size: 0.9rem;
 }
 
-.content {
-    padding: 2rem;
-}
-
-.info-box {
+/* Theme Toggle */
+.theme-toggle {
     background-color: var(--ctp-surface0);
-    border-left: 4px solid var(--ctp-blue);
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
+    border: 1px solid var(--ctp-surface1);
     border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.info-box strong {
+.theme-toggle:hover {
+    background-color: var(--ctp-surface1);
+    border-color: var(--ctp-surface2);
+}
+
+.theme-toggle img {
+    width: 20px;
+    height: 20px;
+}
+
+[data-theme="dark"] .theme-toggle img {
+    filter: invert(1);
+}
+
+/* Card */
+.card {
+    background-color: var(--ctp-mantle);
+    border: 1px solid var(--ctp-surface0);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--ctp-surface0);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
     color: var(--ctp-text);
 }
 
-.info-box pre {
-    background-color: var(--ctp-surface1);
+.card-content {
+    padding: 1.5rem;
+}
+
+/* Command Box */
+.command-box {
+    background-color: var(--ctp-crust);
+    border: 1px solid var(--ctp-surface0);
+    border-radius: 8px;
     padding: 1rem;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin: 0.75rem 0 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-family: var(--mono-font);
+    font-size: 0.9rem;
     color: var(--ctp-subtext1);
 }
 
-table {
+.command-box code {
+    white-space: nowrap;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.command-box code::-webkit-scrollbar {
+    display: none;
+}
+
+.copy-btn {
+    background-color: var(--ctp-surface1);
+    color: var(--ctp-text);
+    border: 1px solid var(--ctp-surface2);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+.copy-btn:hover {
+    background-color: var(--ctp-surface2);
+}
+
+.copy-btn.copied {
+    background-color: var(--ctp-green);
+    color: var(--ctp-base);
+    border-color: var(--ctp-green);
+}
+
+/* File Listing */
+.file-listing table {
     width: 100%;
     border-collapse: collapse;
 }
 
-th {
-    background-color: var(--ctp-surface0);
-    padding: 0.75rem 1rem;
+.file-listing th,
+.file-listing td {
+    padding: 1rem 1.5rem;
     text-align: left;
-    border-bottom: 2px solid var(--ctp-surface1);
+    border-bottom: 1px solid var(--ctp-surface0);
+}
+
+.file-listing th {
+    background-color: var(--ctp-surface0);
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--ctp-subtext1);
 }
 
-td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--ctp-surface0);
+.file-listing td {
+    font-size: 0.95rem;
 }
 
-tr:hover {
+.file-listing tr:last-child td {
+    border-bottom: none;
+}
+
+.file-listing tr:hover td {
     background-color: var(--ctp-surface0);
 }
 
-a {
-    color: var(--ctp-blue);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
+.file-icon {
+    margin-right: 0.75rem;
+    color: var(--ctp-overlay1);
 }
 
-a:hover {
-    color: var(--ctp-sapphire);
+.file-link {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+[data-theme="light"] .file-link {
+    color: var(--ctp-lavender);
+}
+
+[data-theme="dark"] .file-link {
+    color: var(--ctp-mauve);
+}
+
+.file-link:hover {
     text-decoration: underline;
 }
 
-.size, .modified {
-    text-align: right;
+.loading-message {
+    text-align: center;
     color: var(--ctp-subtext0);
-    font-family: var(--mono-font);
-    font-size: 0.9rem;
+    font-style: italic;
+    padding: 2rem;
 }
 
-.icon {
-    margin-right: 0.75rem;
-    display: inline-block;
-    width: 20px;
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        margin: 1rem auto;
+        padding: 0 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .theme-toggle {
+        position: static;
+        margin-top: 1rem;
+    }
+
+    .command-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .copy-btn {
+        margin-top: 0.75rem;
+        margin-left: 0;
+    }
+
+    .file-listing th,
+    .file-listing td {
+        padding: 0.75rem 1rem;
+    }
+
+    .file-listing .hide-mobile {
+        display: none;
+    }
 }

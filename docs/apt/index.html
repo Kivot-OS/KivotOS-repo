@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KivotOS APT Repository</title>
+    <link rel="stylesheet" href="../styles/themes/catppuccin-latte.css">
+    <link rel="stylesheet" href="../styles/themes/catppuccin-mocha.css">
+    <link rel="stylesheet" href="../styles/apt.css">
+
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <a href="../index.html" class="back-link" aria-label="Go back to main page">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="back-arrow-icon"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg>
+                </a>
+                <div>
+                    <h1>KivotOS APT Repository</h1>
+                    <p class="subtitle">Browse packages in /apt/</p>
+                </div>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <img src="../assets/sun.svg" alt="Theme Toggle">
+            </button>
+        </header>
+
+        <main>
+            <section class="card usage-section">
+                <div class="card-header">
+                    <h3>Repository Usage</h3>
+                </div>
+                <div class="card-content">
+                    <div class="command-box">
+                        <code id="repo-command">deb [signed-by=/usr/share/keyrings/kivotos.gpg] https://dungdinhmanh.github.io/KivotOS-repo/apt/ trixie main</code>
+                        <button class="copy-btn" onclick="copyCommand('repo-command', this)">Copy</button>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="card file-listing">
+                <div class="card-header">
+                    <h3>Browse Files</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th class="hide-mobile">Last Modified</th>
+                            <th class="hide-mobile">Size</th>
+                        </tr>
+                    </thead>
+                    <tbody id="file-list">
+                        <tr>
+                            <td>
+                                <span class="file-icon">📁</span>
+                                <a href="../" class="file-link">..</a>
+                            </td>
+                            <td class="hide-mobile">-</td>
+                            <td class="hide-mobile">-</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="loading-message">
+                                Loading repository contents...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Theme management
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            const currentTheme = html.getAttribute('data-theme');
+            const img = themeToggle.querySelector('img');
+            img.src = currentTheme === 'dark' ? '../assets/moon.svg' : '../assets/sun.svg';
+        }
+
+        updateThemeIcon();
+
+        // Copy command function
+        function copyCommand(id, button) {
+            const code = document.getElementById(id);
+            const text = code.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Dynamic file listing via GitHub API
+        const fileListBody = document.getElementById('file-list');
+        const subtitle = document.querySelector('.subtitle');
+        const repo = 'dungdinhmanh/KivotOS-repo'; // CHANGE THIS to your username/repo
+        const basePath = 'docs/apt';
+
+        async function loadDirectory(path) {
+            const cleanPath = path.replace(/\/\//g, '/').replace(/^\//, ''); // Clean up path
+            const apiPath = cleanPath ? `${basePath}/${cleanPath}` : basePath;
+            const apiUrl = `https://api.github.com/repos/${repo}/contents/${apiPath}`;
+
+            subtitle.textContent = `Browse packages in /apt/${cleanPath}`;
+            fileListBody.innerHTML = `<tr><td colspan="3" class="loading-message">Loading repository contents...</td></tr>`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+                const items = await response.json();
+
+                fileListBody.innerHTML = ''; // Clear loading message
+
+                // Parent directory link
+                if (cleanPath) {
+                    const parentPath = path.substring(0, path.lastIndexOf('/', path.length - 2) + 1) || '/';
+                    const parentRow = document.createElement('tr');
+                    parentRow.innerHTML = `
+                        <td>
+                            <span class="file-icon">📁</span>
+                            <a href="${parentPath}" class="file-link parent-link">..</a>
+                        </td>
+                        <td class="hide-mobile">-</td>
+                        <td class="hide-mobile">-</td>
+                    `;
+                    fileListBody.appendChild(parentRow);
+                }
+
+                // Sort items: directories first, then files, all alphabetically
+                items.sort((a, b) => {
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
+                });
+
+                items.forEach(item => {
+                    const isDirectory = item.type === 'dir';
+                    const itemPath = isDirectory ? `${path}${item.name}/` : item.download_url;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <span class="file-icon">${isDirectory ? '📁' : '📄'}</span>
+                            <a href="${itemPath}" class="file-link">${item.name}</a>
+                        </td>
+                        <td class="hide-mobile">-</td>
+                        <td class="hide-mobile">-</td>
+                    `;
+                    fileListBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Failed to load directory:', error);
+                fileListBody.innerHTML = `<tr><td colspan="3" class="loading-message">Failed to load repository contents. Check rate limits.</td></tr>`;
+            }
+        }
+
+        // Handle clicks to navigate
+        document.addEventListener('click', e => {
+            const link = e.target.closest('.file-link');
+            if (link) {
+                e.preventDefault();
+                const path = link.getAttribute('href');
+                const isFile = !path.endsWith('/');
+
+                if (isFile) {
+                    window.open(path, '_blank'); // Open download URL directly
+                } else {
+                    history.pushState({ path }, '', `?path=${path}`);
+                    loadDirectory(path);
+                }
+            }
+        });
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', e => {
+            const path = e.state && e.state.path ? e.state.path : '/';
+            loadDirectory(path);
+        });
+
+        // Initial load
+        const initialPath = new URLSearchParams(window.location.search).get('path') || '/';
+        history.replaceState({ path: initialPath }, '', `?path=${initialPath}`);
+        loadDirectory(initialPath);
+    </script>
+</body>
+</html>

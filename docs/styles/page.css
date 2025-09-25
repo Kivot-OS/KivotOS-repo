@@ -43,9 +43,6 @@
     color: var(--accent-hover);
 }
 
-
-
-
 .status-graph {
     margin: 0.75rem 0;
     text-align: center;
@@ -53,10 +50,7 @@
 
 .status-graph img {
     max-width: 100%;
-    height: auto;
-    max-height: 120px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
+    max-height: 200px;
 }
 
 .status-details {
@@ -74,23 +68,6 @@
     color: var(--text-primary);
 }
 
-.compact-status {
-    padding: clamp(1rem, 3vw, 1.5rem) !important;
-}
-
-.compact-status h2 {
-    font-size: clamp(1.1rem, 3vw, 1.25rem) !important;
-    margin-bottom: clamp(0.75rem, 2vw, 1rem) !important;
-}
-
-.compact-status .cta {
-    margin-top: clamp(0.75rem, 2vw, 1rem);
-}
-
-.compact-status .btn {
-    padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.25rem);
-    font-size: clamp(0.8rem, 2vw, 0.9rem);
-}
 .repo-status-card {
     grid-column: 1 / -1; /* Span full width */
 }

@@ -169,9 +169,15 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Clean and setup directories
+          # Clean and setup directories (preserve index.html)
+          if [ -f docs/apt/index.html ]; then
+            cp docs/apt/index.html /tmp/apt-index.html
+          fi
           rm -rf docs/apt
           mkdir -p docs/apt
+          if [ -f /tmp/apt-index.html ]; then
+            cp /tmp/apt-index.html docs/apt/index.html
+          fi
           
           # Configure aptly
           cat > ~/.aptly.conf <<'JSON'
@@ -218,6 +224,8 @@ jobs:
           
           # Mark as non-Jekyll site
           touch docs/.nojekyll
+          
+
 
 
       - name: Commit and push to main branch
