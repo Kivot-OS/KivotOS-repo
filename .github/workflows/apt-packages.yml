@@ -168,8 +168,8 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Clean up old repository files from the root directory
-          rm -rf dists pool Release InRelease Release.gpg pubkey.gpg
+          # Clean up old repository files
+          rm -rf dists pool *.gpg Release* InRelease
           
           # Configure aptly
           cat > ~/.aptly.conf <<'JSON'
@@ -177,7 +177,7 @@ jobs:
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
             "FileSystemPublishEndpoints": {
-              ".": {
+              "root": {
                 "rootDir": ".",
                 "linkMethod": "copy"
               }
@@ -199,15 +199,16 @@ jobs:
           # Publish for each distro
           for distro in $DISTROS; do
             # Drop old publication if exists
-            aptly publish drop "$distro" filesystem:.: || true
+            aptly publish drop "$distro" filesystem:root: || true
 
-            # Publish repo to root
+            # Publish repo to root directory
             aptly publish repo \
               -distribution="$distro" \
               -architectures=amd64 \
               -gpg-key="$KEYID" \
               -passphrase="$GPG_PASSPHRASE" \
-              "$REPO_NAME" filesystem:.:
+              "$REPO_NAME" filesystem:root:
+
           done
 
           # Export public key
@@ -221,8 +222,8 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # Add and commit changes
-          git add dists pool Release InRelease Release.gpg pubkey.gpg
+          # Add all APT repository files
+          git add -A .
           git diff --staged --quiet || {
             git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]" 
             git push origin main
