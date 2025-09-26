@@ -18,7 +18,6 @@ concurrency:
 
 env:
   COMPONENT: main
-  PAGES_DIR: docs/apt
 
 jobs:
   matrix:
@@ -169,15 +168,8 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Clean and setup directories (preserve index.html)
-          if [ -f docs/apt/index.html ]; then
-            cp docs/apt/index.html /tmp/apt-index.html
-          fi
-          rm -rf docs/apt
-          mkdir -p docs/apt
-          if [ -f /tmp/apt-index.html ]; then
-            cp /tmp/apt-index.html docs/apt/index.html
-          fi
+          # Clean up old repository files from the root directory
+          rm -rf dists pool Release InRelease Release.gpg pubkey.gpg
           
           # Configure aptly
           cat > ~/.aptly.conf <<'JSON'
@@ -185,8 +177,8 @@ jobs:
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
             "FileSystemPublishEndpoints": {
-              "docs/apt": {
-                "rootDir": "docs/apt",
+              ".": {
+                "rootDir": ".",
                 "linkMethod": "copy"
               }
             }
@@ -207,23 +199,19 @@ jobs:
           # Publish for each distro
           for distro in $DISTROS; do
             # Drop old publication if exists
-            aptly publish drop "$distro" filesystem:docs/apt: || true
-            
-            # Publish repo to docs/apt/
+            aptly publish drop "$distro" filesystem:.: || true
+
+            # Publish repo to root
             aptly publish repo \
               -distribution="$distro" \
               -architectures=amd64 \
               -gpg-key="$KEYID" \
               -passphrase="$GPG_PASSPHRASE" \
-              "$REPO_NAME" filesystem:docs/apt:
+              "$REPO_NAME" filesystem:.:
           done
 
-          # Export public key to both locations
-          gpg --armor --export "$KEYID" > docs/apt/pubkey.gpg
-          gpg --armor --export "$KEYID" > docs/pubkey.gpg
-          
-          # Mark as non-Jekyll site
-          touch docs/.nojekyll
+          # Export public key
+          gpg --armor --export "$KEYID" > pubkey.gpg
           
 
 
@@ -234,7 +222,7 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           # Add and commit changes
-          git add -A docs/
+          git add dists pool Release InRelease Release.gpg pubkey.gpg
           git diff --staged --quiet || {
             git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]" 
             git push origin main

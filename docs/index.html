@@ -32,7 +32,7 @@
 
                     <h3>1. Import repo key</h3>
                     <div class="code-block">
-                        <pre><code id="cmd1">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/docs/apt/pubkey.gpg \
+                        <pre><code id="cmd1">curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/docs/pubkey.gpg \
 | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg</code></pre>
                         <button class="copy-btn" onclick="copyCommand('cmd1', this)">Copy</button>
                     </div>
@@ -40,7 +40,7 @@
                     <h3>2. Add sources list (trixie/main)</h3>
                     <div class="code-block">
                         <pre><code id="cmd2">echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
-https://dungdinhmanh.github.io/KivotOS-repo/docs/apt trixie main" \
+https://dungdinhmanh.github.io/KivotOS-repo/docs trixie main" \
 | sudo tee /etc/apt/sources.list.d/kivotos.list</code></pre>
                         <button class="copy-btn" onclick="copyCommand('cmd2', this)">Copy</button>
                     </div>
