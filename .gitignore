@@ -2,3 +2,6 @@
 .aptly/
 .aptly.conf
 
+# Ignore temporary artifacts directory
+all-artifacts/
+
