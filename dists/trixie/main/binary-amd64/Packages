@@ -1,0 +1,47 @@
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: KivotOS <maintainers@kivotos.local>
+Architecture: amd64
+Version: 1.0.7-1
+Filename: pool/main/h/hellwal/hellwal_1.0.7-1_amd64.deb
+Size: 91064
+MD5sum: 9a283de4b3f0bb19bf666514854fab93
+SHA1: af442c70e15c368097ddf4da11648b072d007356
+SHA256: 55c73347676829c78047e589d8e4f560c4795def35d357f9974420e2bed2e77c
+SHA512: af8dfbe03d409ced37a484e060168e820594aa42213d468843383a225bfc032002c20c4a7c877cb818ee53692f2fcee64933dd1e95b72c8d7678b12270b70684
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: yazi-cli
+Priority: optional
+Installed-Size: 3156
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.5.31-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-cli/yazi-cli_25.5.31-1_amd64.deb
+Size: 967132
+MD5sum: 84585191b3914776651c8358c54183a7
+SHA1: 1b1aead4c50087347f9ef9cb621bccdaf87235c1
+SHA256: 6661f303ebba76b7885466608ab5af167226b0da5cf4708dd2caee1ff9e894ca
+SHA512: e59e0f0eafc6fc80a24d81e76a46298f061f389ed03fcbec1faa33796af89e8cf71c48b853f5060081bcc93f129255c75ddd53ea1c3060cb82f5d3e088e011f8
+Description: Yazi command-line interface
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-fm
+Priority: optional
+Installed-Size: 16622
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.5.31-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-fm/yazi-fm_25.5.31-1_amd64.deb
+Size: 4940056
+MD5sum: ac35d41f94643624cee640e5e685edc8
+SHA1: 6c4406f52fc542002b77417366f4be176e69a393
+SHA256: e349a9769266915a4363fc4d7df99835724edc5c576a0afb925437f6e06e54da
+SHA512: dbf45bee73e77beacf6e85015cacd1309c20f3f5a2455c95156910b7a8606b5b3bb8fb9f8615a773ade8df34ab6b01ac110e7d2e464c0a717ea0176daecd4f6c
+Description: Yazi File Manager
+Homepage: https://yazi-rs.github.io
+
