@@ -194,10 +194,16 @@ jobs:
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
           
           # Add all debs to repo
-          find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          echo "=== Adding packages to aptly repo ==="
+          find all-artifacts -name "*.deb" -exec echo "Adding: {}" \; -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          
+          echo "=== Repository contents ==="
+          aptly repo show -with-packages "$REPO_NAME"
 
           # Publish for each distro
           for distro in $DISTROS; do
+            echo "=== Publishing for $distro ==="
+            
             # Drop old publication if exists
             aptly publish drop "$distro" filesystem:root: || true
 
@@ -209,10 +215,19 @@ jobs:
               -passphrase="$GPG_PASSPHRASE" \
               "$REPO_NAME" filesystem:root:
 
+            echo "=== Files created after publish ==="
+            ls -la
+            echo "=== dists directory ==="
+            ls -la dists/ || echo "No dists directory found"
+            echo "=== pool directory ==="  
+            ls -la pool/ || echo "No pool directory found"
           done
 
           # Export public key
           gpg --armor --export "$KEYID" > pubkey.gpg
+          
+          echo "=== Final file listing ==="
+          ls -la
           
 
 
