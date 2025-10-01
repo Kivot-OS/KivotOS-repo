@@ -5,11 +5,11 @@ Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
 Version: 1.0.7-1
 Filename: pool/main/h/hellwal/hellwal_1.0.7-1_amd64.deb
-Size: 90936
-MD5sum: 1fa22164bceeeb274d083969f9491f2b
-SHA1: 4f0585dee28d15ed7e488fa472dd3cdbcc0c1e9e
-SHA256: 462ea088183191a72d6d362debcbf1751ff554a57a09d8e044a48e95149ec47d
-SHA512: 5ca6578d80e4264685a6cf9ca86618146241c87ab8c58280af38edb04ab476e1e2ef5c70adb021d829005bcb177290d6d7fb24b7bcb17bdecfb46f7a522313ce
+Size: 90880
+MD5sum: eabb266a2aed0e0eb157ff4da19e0dd8
+SHA1: c5cf0ab94bd9c1b5195a5e4cb7ca25c9f914b22e
+SHA256: a3c3e1da46cd5768d177ff4cb28c8ecdafdfedf9109ce9e7bc70ecbf84542b80
+SHA512: 44c403d66b30a0c04fdee9edbe939fe2677b222bcdea9d73a60c90c9cfd59a4114b30d140f4bedf73a78bf353e4f168aa8d21e108e6b6afe5d6409179ba88be2
 Description: Color palette generator (Pywal-like) written in C++
 Homepage: https://github.com/danihek/hellwal
 
@@ -21,11 +21,11 @@ Architecture: amd64
 Version: 25.5.31-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-cli/yazi-cli_25.5.31-1_amd64.deb
-Size: 967132
-MD5sum: 84585191b3914776651c8358c54183a7
-SHA1: 1b1aead4c50087347f9ef9cb621bccdaf87235c1
-SHA256: 6661f303ebba76b7885466608ab5af167226b0da5cf4708dd2caee1ff9e894ca
-SHA512: e59e0f0eafc6fc80a24d81e76a46298f061f389ed03fcbec1faa33796af89e8cf71c48b853f5060081bcc93f129255c75ddd53ea1c3060cb82f5d3e088e011f8
+Size: 967052
+MD5sum: f2b6659fb955187a50d94e3fb1f18b51
+SHA1: 42623ea0b7ad84fb1be37418090db61cbc9dbcf3
+SHA256: c2cc5e5d79d09605aae3a5d81ad7efa8eca8d53e9d0a5cc39ac80c4473e8001c
+SHA512: a3e921b3efb1e934f199b3d2e1fc4c8682271f0aee0994c9cdac1914f77001915d6d2cc49d955bfa5173653b926408e47a67d6e4fbedd2d6344226d0336ba645
 Description: Yazi command-line interface
 Homepage: https://yazi-rs.github.io
 
@@ -37,11 +37,11 @@ Architecture: amd64
 Version: 25.5.31-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-fm/yazi-fm_25.5.31-1_amd64.deb
-Size: 4940056
-MD5sum: ac35d41f94643624cee640e5e685edc8
-SHA1: 6c4406f52fc542002b77417366f4be176e69a393
-SHA256: e349a9769266915a4363fc4d7df99835724edc5c576a0afb925437f6e06e54da
-SHA512: dbf45bee73e77beacf6e85015cacd1309c20f3f5a2455c95156910b7a8606b5b3bb8fb9f8615a773ade8df34ab6b01ac110e7d2e464c0a717ea0176daecd4f6c
+Size: 4945172
+MD5sum: 58bf4e2f7097240757fc3ff224d4f20e
+SHA1: ac7ab87ae9509791f24c9c6bd44bbeb535150ff1
+SHA256: 91ac4bcd9e6bb72915f7130281c9dd0ca630b3af621b55a422c34d56e9c2698f
+SHA512: 56e6ee6679ec075fc8113fd4995671e3e5bd59a41b90c29ca407cc3db5784e766d1f1453ac4da896b4b6368322466eb47fed263a20e05ea2a777beae01c7bdbf
 Description: Yazi File Manager
 Homepage: https://yazi-rs.github.io
 
