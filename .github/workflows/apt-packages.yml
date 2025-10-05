@@ -68,13 +68,28 @@ jobs:
               TAG=$(curl -fsSL "https://api.github.com/repos/${{ matrix.repo }}/releases/latest" | jq -r .tag_name)
               curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${TAG}.tar.gz"
               tar -xzf src.tgz
-              pushd "$(basename "${{ matrix.repo }}")-${TAG#v}"
-              if [ "${CRATES}" != "null" ]; then
-                echo "$CRATES" | jq -r '.[]' | while read -r C; do cargo deb -p "$C" --locked; done
+              SRC_DIR="$(basename "${{ matrix.repo }}")-${TAG#v}"
+              pushd "$SRC_DIR"
+            
+              if [ -f Cargo.toml ]; then
+                # build bằng cargo-deb nếu có
+                if cargo deb --help >/dev/null 2>&1; then
+                  if [ "${CRATES}" != "null" ]; then
+                    echo "$CRATES" | jq -r '.[]' | while read -r C; do
+                      cargo deb -p "$C" --locked
+                    done
+                  else
+                    cargo deb --locked
+                  fi
+                  mv target/debian/*.deb "$ART"
+                else
+                  # fallback: chỉ build binary nếu không có cargo-deb
+                  cargo build --release --locked
+                  install -Dm755 target/release/* "$ART/"
+                fi
               else
-                cargo deb --locked
+                echo "⚠️ Không tìm thấy Cargo.toml trong repo ${{ matrix.repo }}"
               fi
-              mv target/debian/*.deb "$ART"
               popd
               ;;
 
