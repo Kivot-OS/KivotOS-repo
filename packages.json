@@ -1,13 +1,26 @@
 {
-"distros": ["trixie"],
-"packages": [
-{ "name": "yazi", "type": "cargo", "repo": "sxyazi/yazi", "crates": ["yazi-fm", "yazi-cli"], "description": "Blazing fast TUI file manager" },
-{ "name": "hellwal", "type": "make", "repo": "danihek/hellwal", "description": "Color palette generator (Pywal-like) written in C++" },
-{
-"name": "wallust",
-"type": "cargo",
-"repo": "https://codeberg.org/explosion-mental/wallust.git",
-"description": "Wallust wallpaper management utility"
-}
-]
+  "distros": ["trixie"],
+  "packages": [
+    {
+      "name": "wallust",
+      "type": "cargo",
+      "source": "codeberg.org",
+      "repo": "explosion-mental/wallust",
+      "description": "Generate color palettes for wallpapers"
+    },
+    {
+      "name": "hellwal",
+      "type": "make",
+      "source": "github.com",
+      "repo": "dungdinhmanh/hellwal",
+      "description": "Wallpaper manager for KivotOS"
+    },
+    {
+      "name": "yazi",
+      "type": "cargo",
+      "source": "github.com",
+      "repo": "sxyazi/yazi",
+      "description": "Blazing fast terminal file manager"
+    }
+  ]
 }
