@@ -34,7 +34,7 @@ jobs:
             echo '{"distros":["trixie"],"packages":[]}' > packages.json
           fi
           echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
-          echo "distros=$(jq -r '.distros|join(" ")' packages.json)" >> "$GITHUB_OUTPUT"
+          echo "distros=$(jq -r '.distros|join(\" \")' packages.json)" >> "$GITHUB_OUTPUT"
 
   build:
     name: build ${{ matrix.name }}
@@ -45,7 +45,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.matrix.outputs.packages) }}
     steps:
-      - name: Install deps
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl git dpkg-dev build-essential cmake pkg-config
@@ -54,25 +54,30 @@ jobs:
             cargo install cargo-deb --locked
           fi
 
-      - name: Build/Fetch
+      - name: Build or Fetch Package
         shell: bash
         env:
           CRATES: ${{ toJson(matrix.crates) }}
+          SRC: ${{ matrix.source }}
+          REPO: ${{ matrix.repo }}
+          TYPE: ${{ matrix.type }}
         run: |
           set -euo pipefail
           ART="${GITHUB_WORKSPACE}/artifacts"
           mkdir -p "$ART"
 
-          case "${{ matrix.type }}" in
+          # === Tạo URL clone dựa vào source ===
+          CLONE_URL="https://${SRC}/${REPO}"
+
+          echo "🔗 Clone URL: $CLONE_URL"
+          echo "📦 Package type: ${TYPE}"
+
+          case "${TYPE}" in
             cargo)
-              TAG=$(curl -fsSL "https://api.github.com/repos/${{ matrix.repo }}/releases/latest" | jq -r .tag_name)
-              curl -fsSL -o src.tgz "https://github.com/${{ matrix.repo }}/archive/refs/tags/${TAG}.tar.gz"
-              tar -xzf src.tgz
-              SRC_DIR="$(basename "${{ matrix.repo }}")-${TAG#v}"
-              pushd "$SRC_DIR"
-            
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              
               if [ -f Cargo.toml ]; then
-                # build bằng cargo-deb nếu có
                 if cargo deb --help >/dev/null 2>&1; then
                   if [ "${CRATES}" != "null" ]; then
                     echo "$CRATES" | jq -r '.[]' | while read -r C; do
@@ -83,30 +88,22 @@ jobs:
                   fi
                   mv target/debian/*.deb "$ART"
                 else
-                  # fallback: chỉ build binary nếu không có cargo-deb
                   cargo build --release --locked
                   install -Dm755 target/release/* "$ART/"
                 fi
               else
-                echo "⚠️ Không tìm thấy Cargo.toml trong repo ${{ matrix.repo }}"
+                echo "⚠️ Không tìm thấy Cargo.toml trong repo $REPO"
               fi
               popd
               ;;
 
             make)
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
               NAME="${{ matrix.name }}"
-              REPO="${{ matrix.repo }}"
+              BINARY="${{ matrix.binary }}"
               DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
-              BINARY="${{ matrix.binary }}";     : "${BINARY:=hellwal}"
-
-              TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name 2>/dev/null || true)
-              if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
-                curl -fsSL -o src.tgz "https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
-                tar -xzf src.tgz; SRC_DIR="$(basename "$REPO")-${TAG#v}"; VER=${TAG#v}
-              else
-                git clone --depth=1 "https://github.com/${REPO}" src; SRC_DIR=src; VER="0.0+git$(date -u +%Y%m%d)"
-              fi
-              pushd "$SRC_DIR"
+              VER="0.0+git$(date -u +%Y%m%d)"
               make
               mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
               install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
@@ -118,7 +115,7 @@ jobs:
                 "Priority: optional" \
                 "Architecture: amd64" \
                 "Maintainer: KivotOS <maintainers@kivotos.local>" \
-                "Homepage: https://github.com/${REPO}" \
+                "Homepage: $CLONE_URL" \
                 "Description: ${DESC}" > pkg/DEBIAN/control
               dpkg-deb -Zxz --uniform-compression --build pkg "${NAME}_${VER}-1_amd64.deb"
               mv "${NAME}_${VER}-1_amd64.deb" "$ART"
@@ -126,14 +123,16 @@ jobs:
               ;;
 
             mirror)
-              API="https://api.github.com/repos/${{ matrix.repo }}/releases/latest"
+              echo "🔍 Fetching mirror from ${SRC}"
+              API="https://api.${SRC}/repos/${REPO}/releases/latest"
               curl -fsSL "$API" | jq -r '.assets[] | .browser_download_url' \
                 | grep -E "${{ matrix.pattern }}" \
                 | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "$ART/$FN"; done
               ;;
-            *) echo "Unknown type: ${{ matrix.type }}"; exit 1;;
+            *) echo "Unknown type: ${TYPE}"; exit 1;;
           esac
 
+          echo "✅ Build complete for ${{ matrix.name }}"
           ls -lh "$ART"
 
       - uses: actions/upload-artifact@v4
@@ -148,18 +147,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
       - name: Install deps
         run: |
           sudo apt-get update 
           sudo apt-get install -y aptly
-
       - name: Download all debs
         uses: actions/download-artifact@v4
         with:
           pattern: debs-*
           path: all-artifacts
-
       - name: Cache aptly DB
         uses: actions/cache@v4
         with:
@@ -167,7 +163,7 @@ jobs:
           key: aptly-db-v1
           restore-keys: |
             aptly-db-
-      - name: Configure GPG (loopback)
+      - name: Configure GPG
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
           printf 'pinentry-mode loopback\nbatch\n' > ~/.gnupg/gpg.conf
@@ -182,11 +178,7 @@ jobs:
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          
-          # Clean up old repository files
           rm -rf dists pool *.gpg Release* InRelease
-          
-          # Configure aptly
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
@@ -199,62 +191,20 @@ jobs:
             }
           }
           JSON
-
-          # Import GPG key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
-
-          # Create and populate repo
           REPO_NAME="kivotos"
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
-          
-          # Add all debs to repo
-          echo "=== Adding packages to aptly repo ==="
-          find all-artifacts -name "*.deb" -exec echo "Adding: {}" \; -exec aptly repo add -force-replace "$REPO_NAME" {} +
-          
-          echo "=== Repository contents ==="
-          aptly repo show -with-packages "$REPO_NAME"
-
-          # Publish for each distro
+          find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
           for distro in $DISTROS; do
-            echo "=== Publishing for $distro ==="
-            
-            # Drop old publication if exists
             aptly publish drop "$distro" filesystem:root: || true
-
-            # Publish repo to root directory
-            aptly publish repo \
-              -distribution="$distro" \
-              -architectures=amd64 \
-              -gpg-key="$KEYID" \
-              -passphrase="$GPG_PASSPHRASE" \
-              "$REPO_NAME" filesystem:root:
-
-            echo "=== Files created after publish ==="
-            ls -la
-            echo "=== dists directory ==="
-            ls -la dists/ || echo "No dists directory found"
-            echo "=== pool directory ==="  
-            ls -la pool/ || echo "No pool directory found"
+            aptly publish repo -distribution="$distro" -architectures=amd64 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" filesystem:root:
           done
-
-          # Export public key
           gpg --armor --export "$KEYID" > pubkey.gpg
-          
-          echo "=== Final file listing ==="
-          ls -la
-          
-
-
-
-      - name: Commit and push to main branch
-        run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # Add all APT repository files
           git add -A .
           git diff --staged --quiet || {
-            git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]" 
+            git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]"
             git push origin main
           } || echo "No changes to commit"
