@@ -196,9 +196,16 @@ jobs:
           REPO_NAME="kivotos"
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
           find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          aptly repo show -with-packages "$REPO_NAME"
           for distro in $DISTROS; do
+            echo "Publishing for $distro"
             aptly publish drop "$distro" filesystem:root: || true
-            aptly publish repo -distribution="$distro" -architectures=amd64 -gpg-key="$KEYID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" filesystem:root:
+            aptly publish repo \
+            -distribution="$distro" \
+            -architectures=amd64 \
+            -gpg-key="$KEYID" \
+            -passphrase="$GPG_PASSPHRASE" \
+            "$REPO_NAME" filesystem:root:
           done
           gpg --armor --export "$KEYID" > pubkey.gpg
           git config --global user.name 'github-actions[bot]'
