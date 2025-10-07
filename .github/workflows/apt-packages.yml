@@ -178,6 +178,14 @@ jobs:
           GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
+          DISTROS_RAW="${{ needs.matrix.outputs.distros }}"
+          if [ -z "${DISTROS_RAW:-}" ]; then
+            echo "WARN: DISTROS empty, defaulting to 'trixie'"
+            DISTROS="trixie"
+          else
+            DISTROS="$DISTROS_RAW"
+          fi
+          echo "DISTROS=${DISTROS}"
           rm -rf dists pool *.gpg Release* InRelease
           cat > ~/.aptly.conf <<'JSON'
           {
@@ -193,12 +201,18 @@ jobs:
           JSON
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
+          if [ -z "${KEYID:-}" ]; then
+            echo "ERROR: GPG KEYID empty. Check GPG_PRIVATE_KEY secret."
+            exit 1
+          fi
+          echo "Using GPG KEYID: $KEYID"
           REPO_NAME="kivotos"
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
           find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          echo "Repo contents after add:"
           aptly repo show -with-packages "$REPO_NAME"
           for distro in $DISTROS; do
-            echo "Publishing for $distro"
+            echo "Publishing for distro: $distro"
             aptly publish drop "$distro" filesystem:root: || true
             aptly publish repo \
             -distribution="$distro" \
@@ -207,6 +221,14 @@ jobs:
             -passphrase="$GPG_PASSPHRASE" \
             "$REPO_NAME" filesystem:root:
           done
+          if [ -d ".aptly/public" ]; then
+            echo "Copying .aptly/public -> repo root"
+            cp -a .aptly/public/* . || true
+          fi
+          echo "Produced files:"
+          ls -la dists || true
+          ls -la pool || true
+          ls -la Release* InRelease* || true
           gpg --armor --export "$KEYID" > pubkey.gpg
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
