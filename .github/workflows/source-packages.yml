@@ -100,7 +100,7 @@ Description: ${DESCRIPTION}
 EOF
                 
                 # Tạo rules file
-                cat > debian/rules <<'EOF'
+                cat > debian/rules <<'RULES_EOF'
 #!/usr/bin/make -f
 %:
 	dh $@
@@ -110,7 +110,7 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	install -Dm755 target/release/${NAME} debian/${NAME}/usr/bin/${NAME}
-EOF
+RULES_EOF
                 chmod +x debian/rules
                 
                 # Tạo changelog
@@ -157,7 +157,7 @@ Description: ${DESC}
 EOF
               
               # Tạo rules file
-              cat > debian/rules <<'EOF'
+              cat > debian/rules <<'MAKE_RULES_EOF'
 #!/usr/bin/make -f
 %:
 	dh $@
@@ -167,7 +167,7 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	install -Dm755 ${BINARY} debian/${NAME}/usr/bin/${NAME}
-EOF
+MAKE_RULES_EOF
               chmod +x debian/rules
               
               # Tạo changelog
