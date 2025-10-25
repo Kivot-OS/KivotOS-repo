@@ -84,7 +84,7 @@ jobs:
                 
                 # Tạo debian directory
                 mkdir -p debian
-                cat > debian/control <<EOF
+                cat > debian/control << 'CONTROL_EOF'
 Source: ${NAME}
 Section: utils
 Priority: optional
@@ -97,10 +97,10 @@ Package: ${NAME}
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}
 Description: ${DESCRIPTION}
-EOF
+CONTROL_EOF
                 
                 # Tạo rules file
-                cat > debian/rules <<'RULES_EOF'
+                cat > debian/rules << 'RULES_EOF'
 #!/usr/bin/make -f
 %:
 	dh $@
@@ -114,13 +114,13 @@ RULES_EOF
                 chmod +x debian/rules
                 
                 # Tạo changelog
-                cat > debian/changelog <<EOF
+                cat > debian/changelog << 'CHANGELOG_EOF'
 ${NAME} (${VERSION}-1) trixie; urgency=medium
 
   * Initial release
 
  -- KivotOS <maintainers@kivotos.local>  $(date -R)
-EOF
+CHANGELOG_EOF
                 
                 # Tạo source package
                 dpkg-source -b .
@@ -141,7 +141,7 @@ EOF
               
               # Tạo debian directory
               mkdir -p debian
-              cat > debian/control <<EOF
+              cat > debian/control << 'MAKE_CONTROL_EOF'
 Source: ${NAME}
 Section: utils
 Priority: optional
@@ -154,10 +154,10 @@ Package: ${NAME}
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}
 Description: ${DESC}
-EOF
+MAKE_CONTROL_EOF
               
               # Tạo rules file
-              cat > debian/rules <<'MAKE_RULES_EOF'
+              cat > debian/rules << 'MAKE_RULES_EOF'
 #!/usr/bin/make -f
 %:
 	dh $@
@@ -171,13 +171,13 @@ MAKE_RULES_EOF
               chmod +x debian/rules
               
               # Tạo changelog
-              cat > debian/changelog <<EOF
+              cat > debian/changelog << 'MAKE_CHANGELOG_EOF'
 ${NAME} (${VER}-1) trixie; urgency=medium
 
   * Initial release
 
  -- KivotOS <maintainers@kivotos.local>  $(date -R)
-EOF
+MAKE_CHANGELOG_EOF
               
               # Tạo source package
               dpkg-source -b .
@@ -247,7 +247,7 @@ EOF
           rm -rf dists pool *.gpg Release* InRelease
           
           # Configure aptly
-          cat > ~/.aptly.conf <<'JSON'
+          cat > ~/.aptly.conf << 'APTLY_CONFIG_EOF'
           {
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
@@ -258,7 +258,7 @@ EOF
               }
             }
           }
-          JSON
+          APTLY_CONFIG_EOF
           
           # Import GPG key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
