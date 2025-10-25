@@ -88,7 +88,7 @@ jobs:
                 # Tạo debian directory
                 mkdir -p debian
                 mkdir -p debian/source
-                echo "3.0 (quilt)" > debian/source/format
+                echo "1.0" > debian/source/format
                 printf '%s\n' \
                   "Source: ${NAME}" \
                   "Section: utils" \
@@ -147,7 +147,7 @@ jobs:
               # Tạo debian directory
               mkdir -p debian
               mkdir -p debian/source
-              echo "3.0 (quilt)" > debian/source/format
+              echo "1.0" > debian/source/format
               printf '%s\n' \
                 "Source: ${NAME}" \
                 "Section: utils" \
