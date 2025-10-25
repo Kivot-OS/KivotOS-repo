@@ -51,6 +51,7 @@ jobs:
           sudo apt-get install -y jq curl git dpkg-dev build-essential cmake pkg-config
           if [ "${{ matrix.type }}" = "cargo" ]; then
             sudo apt-get install -y rustc cargo
+            cargo install cargo-deb --locked
           fi
 
       - name: Build Source Package
@@ -124,8 +125,11 @@ jobs:
             *) echo "Unknown type: ${TYPE}"; exit 1;;
           esac
 
-          echo "✅ Source package build complete for ${{ matrix.name }}"
+          echo "✅ Package build complete for ${{ matrix.name }}"
+          echo "📦 Generated files:"
           ls -lh "$ART"
+          echo "📋 Package contents:"
+          find "$ART" -type f -exec echo "File: {}" \; -exec ls -lh {} \;
 
       - uses: actions/upload-artifact@v4
         with:
