@@ -84,43 +84,40 @@ jobs:
                 
                 # Tạo debian directory
                 mkdir -p debian
-                cat > debian/control << 'CONTROL_EOF'
-Source: ${NAME}
-Section: utils
-Priority: optional
-Maintainer: KivotOS <maintainers@kivotos.local>
-Build-Depends: debhelper (>= 13), rustc, cargo
-Standards-Version: 4.6.0
-Homepage: ${CLONE_URL}
-
-Package: ${NAME}
-Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}
-Description: ${DESCRIPTION}
-CONTROL_EOF
+                printf '%s\n' \
+                  "Source: ${NAME}" \
+                  "Section: utils" \
+                  "Priority: optional" \
+                  "Maintainer: KivotOS <maintainers@kivotos.local>" \
+                  "Build-Depends: debhelper (>= 13), rustc, cargo" \
+                  "Standards-Version: 4.6.0" \
+                  "Homepage: ${CLONE_URL}" \
+                  "" \
+                  "Package: ${NAME}" \
+                  "Architecture: any" \
+                  "Depends: \${shlibs:Depends}, \${misc:Depends}" \
+                  "Description: ${DESCRIPTION}" > debian/control
                 
                 # Tạo rules file
-                cat > debian/rules << 'RULES_EOF'
-#!/usr/bin/make -f
-%:
-	dh $@
-
-override_dh_auto_build:
-	cargo build --release --locked
-
-override_dh_auto_install:
-	install -Dm755 target/release/${NAME} debian/${NAME}/usr/bin/${NAME}
-RULES_EOF
+                printf '%s\n' \
+                  "#!/usr/bin/make -f" \
+                  "%:" \
+                  "	dh \$@" \
+                  "" \
+                  "override_dh_auto_build:" \
+                  "	cargo build --release --locked" \
+                  "" \
+                  "override_dh_auto_install:" \
+                  "	install -Dm755 target/release/\${NAME} debian/\${NAME}/usr/bin/\${NAME}" > debian/rules
                 chmod +x debian/rules
                 
                 # Tạo changelog
-                cat > debian/changelog << 'CHANGELOG_EOF'
-${NAME} (${VERSION}-1) trixie; urgency=medium
-
-  * Initial release
-
- -- KivotOS <maintainers@kivotos.local>  $(date -R)
-CHANGELOG_EOF
+                printf '%s\n' \
+                  "${NAME} (${VERSION}-1) trixie; urgency=medium" \
+                  "" \
+                  "  * Initial release" \
+                  "" \
+                  " -- KivotOS <maintainers@kivotos.local>  $(date -R)" > debian/changelog
                 
                 # Tạo source package
                 dpkg-source -b .
@@ -141,43 +138,40 @@ CHANGELOG_EOF
               
               # Tạo debian directory
               mkdir -p debian
-              cat > debian/control << 'MAKE_CONTROL_EOF'
-Source: ${NAME}
-Section: utils
-Priority: optional
-Maintainer: KivotOS <maintainers@kivotos.local>
-Build-Depends: debhelper (>= 13), build-essential
-Standards-Version: 4.6.0
-Homepage: ${CLONE_URL}
-
-Package: ${NAME}
-Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}
-Description: ${DESC}
-MAKE_CONTROL_EOF
+              printf '%s\n' \
+                "Source: ${NAME}" \
+                "Section: utils" \
+                "Priority: optional" \
+                "Maintainer: KivotOS <maintainers@kivotos.local>" \
+                "Build-Depends: debhelper (>= 13), build-essential" \
+                "Standards-Version: 4.6.0" \
+                "Homepage: ${CLONE_URL}" \
+                "" \
+                "Package: ${NAME}" \
+                "Architecture: any" \
+                "Depends: \${shlibs:Depends}, \${misc:Depends}" \
+                "Description: ${DESC}" > debian/control
               
               # Tạo rules file
-              cat > debian/rules << 'MAKE_RULES_EOF'
-#!/usr/bin/make -f
-%:
-	dh $@
-
-override_dh_auto_build:
-	make
-
-override_dh_auto_install:
-	install -Dm755 ${BINARY} debian/${NAME}/usr/bin/${NAME}
-MAKE_RULES_EOF
+              printf '%s\n' \
+                "#!/usr/bin/make -f" \
+                "%:" \
+                "	dh \$@" \
+                "" \
+                "override_dh_auto_build:" \
+                "	make" \
+                "" \
+                "override_dh_auto_install:" \
+                "	install -Dm755 \${BINARY} debian/\${NAME}/usr/bin/\${NAME}" > debian/rules
               chmod +x debian/rules
               
               # Tạo changelog
-              cat > debian/changelog << 'MAKE_CHANGELOG_EOF'
-${NAME} (${VER}-1) trixie; urgency=medium
-
-  * Initial release
-
- -- KivotOS <maintainers@kivotos.local>  $(date -R)
-MAKE_CHANGELOG_EOF
+              printf '%s\n' \
+                "${NAME} (${VER}-1) trixie; urgency=medium" \
+                "" \
+                "  * Initial release" \
+                "" \
+                " -- KivotOS <maintainers@kivotos.local>  $(date -R)" > debian/changelog
               
               # Tạo source package
               dpkg-source -b .
@@ -247,18 +241,17 @@ MAKE_CHANGELOG_EOF
           rm -rf dists pool *.gpg Release* InRelease
           
           # Configure aptly
-          cat > ~/.aptly.conf << 'APTLY_CONFIG_EOF'
-          {
-            "rootDir": ".aptly",
-            "downloadConcurrency": 4,
-            "FileSystemPublishEndpoints": {
-              "root": {
-                "rootDir": ".",
-                "linkMethod": "copy"
-              }
-            }
-          }
-          APTLY_CONFIG_EOF
+          printf '%s\n' \
+            '{' \
+            '  "rootDir": ".aptly",' \
+            '  "downloadConcurrency": 4,' \
+            '  "FileSystemPublishEndpoints": {' \
+            '    "root": {' \
+            '      "rootDir": ".",' \
+            '      "linkMethod": "copy"' \
+            '    }' \
+            '  }' \
+            '}' > ~/.aptly.conf
           
           # Import GPG key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
