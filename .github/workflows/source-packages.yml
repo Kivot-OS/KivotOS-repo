@@ -74,59 +74,22 @@ jobs:
           case "${TYPE}" in
             cargo)
               git clone --depth=1 "$CLONE_URL" src
+              pushd src
               
-              if [ -f src/Cargo.toml ]; then
-                # Tạo source package cho Rust projects
-                NAME="${{ matrix.name }}"
-                VERSION="$(cd src && cargo metadata --format-version 1 | jq -r '.packages[0].version')"
-                DESCRIPTION="${{ matrix.description }}"
-                
-                # Rename directory to match dpkg-source requirements
-                mv src "${NAME}-${VERSION}"
-                pushd "${NAME}-${VERSION}"
-                
-                # Tạo debian directory
-                mkdir -p debian
-                mkdir -p debian/source
-                echo "1.0" > debian/source/format
-                printf '%s\n' \
-                  "Source: ${NAME}" \
-                  "Section: utils" \
-                  "Priority: optional" \
-                  "Maintainer: KivotOS <maintainers@kivotos.local>" \
-                  "Build-Depends: debhelper (>= 13), rustc, cargo" \
-                  "Standards-Version: 4.6.0" \
-                  "Homepage: ${CLONE_URL}" \
-                  "" \
-                  "Package: ${NAME}" \
-                  "Architecture: any" \
-                  "Depends: \${shlibs:Depends}, \${misc:Depends}" \
-                  "Description: ${DESCRIPTION}" > debian/control
-                
-                # Tạo rules file
-                printf '%s\n' \
-                  "#!/usr/bin/make -f" \
-                  "%:" \
-                  "	dh \$@" \
-                  "" \
-                  "override_dh_auto_build:" \
-                  "	cargo build --release --locked" \
-                  "" \
-                  "override_dh_auto_install:" \
-                  "	install -Dm755 target/release/\${NAME} debian/\${NAME}/usr/bin/\${NAME}" > debian/rules
-                chmod +x debian/rules
-                
-                # Tạo changelog
-                printf '%s\n' \
-                  "${NAME} (${VERSION}-1) trixie; urgency=medium" \
-                  "" \
-                  "  * Initial release" \
-                  "" \
-                  " -- KivotOS <maintainers@kivotos.local>  $(date -R)" > debian/changelog
-                
-                # Tạo source package
-                dpkg-source -b .
-                mv ../*.dsc ../*.tar.gz "$ART"
+              if [ -f Cargo.toml ]; then
+                if cargo deb --help >/dev/null 2>&1; then
+                  if [ "${CRATES}" != "null" ]; then
+                    echo "$CRATES" | jq -r '.[]' | while read -r C; do
+                      cargo deb -p "$C" --locked
+                    done
+                  else
+                    cargo deb --locked
+                  fi
+                  mv target/debian/*.deb "$ART"
+                else
+                  cargo build --release --locked
+                  install -Dm755 target/release/* "$ART/"
+                fi
               else
                 echo "⚠️ Không tìm thấy Cargo.toml trong repo $REPO"
               fi
@@ -135,57 +98,26 @@ jobs:
 
             make)
               git clone --depth=1 "$CLONE_URL" src
+              pushd src
               NAME="${{ matrix.name }}"
               BINARY="${{ matrix.binary }}"
               DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
               VER="0.0+git$(date -u +%Y%m%d)"
-              
-              # Rename directory to match dpkg-source requirements
-              mv src "${NAME}-${VER}"
-              pushd "${NAME}-${VER}"
-              
-              # Tạo debian directory
-              mkdir -p debian
-              mkdir -p debian/source
-              echo "1.0" > debian/source/format
+              make
+              mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
+              install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
+              [ -f README.md ] && install -Dm644 README.md "pkg/usr/share/doc/${NAME}/README.md" || true
               printf '%s\n' \
-                "Source: ${NAME}" \
+                "Package: ${NAME}" \
+                "Version: ${VER}-1" \
                 "Section: utils" \
                 "Priority: optional" \
+                "Architecture: amd64" \
                 "Maintainer: KivotOS <maintainers@kivotos.local>" \
-                "Build-Depends: debhelper (>= 13), build-essential" \
-                "Standards-Version: 4.6.0" \
-                "Homepage: ${CLONE_URL}" \
-                "" \
-                "Package: ${NAME}" \
-                "Architecture: any" \
-                "Depends: \${shlibs:Depends}, \${misc:Depends}" \
-                "Description: ${DESC}" > debian/control
-              
-              # Tạo rules file
-              printf '%s\n' \
-                "#!/usr/bin/make -f" \
-                "%:" \
-                "	dh \$@" \
-                "" \
-                "override_dh_auto_build:" \
-                "	make" \
-                "" \
-                "override_dh_auto_install:" \
-                "	install -Dm755 \${BINARY} debian/\${NAME}/usr/bin/\${NAME}" > debian/rules
-              chmod +x debian/rules
-              
-              # Tạo changelog
-              printf '%s\n' \
-                "${NAME} (${VER}-1) trixie; urgency=medium" \
-                "" \
-                "  * Initial release" \
-                "" \
-                " -- KivotOS <maintainers@kivotos.local>  $(date -R)" > debian/changelog
-              
-              # Tạo source package
-              dpkg-source -b .
-              mv ../*.dsc ../*.tar.gz "$ART"
+                "Homepage: $CLONE_URL" \
+                "Description: ${DESC}" > pkg/DEBIAN/control
+              dpkg-deb -Zxz --uniform-compression --build pkg "${NAME}_${VER}-1_amd64.deb"
+              mv "${NAME}_${VER}-1_amd64.deb" "$ART"
               popd
               ;;
 
@@ -197,8 +129,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: source-${{ matrix.name }}
-          path: source-artifacts/*.dsc source-artifacts/*.tar.gz
+          name: debs-${{ matrix.name }}
+          path: source-artifacts/*.deb
           retention-days: 1
 
   publish-source:
@@ -211,11 +143,11 @@ jobs:
         run: |
           sudo apt-get update 
           sudo apt-get install -y aptly
-      - name: Download all source packages
+      - name: Download all debs
         uses: actions/download-artifact@v4
         with:
-          pattern: source-*
-          path: all-source-artifacts
+          pattern: debs-*
+          path: all-artifacts
       - name: Cache aptly DB
         uses: actions/cache@v4
         with:
@@ -272,23 +204,23 @@ jobs:
           fi
           echo "Using GPG KEYID: $KEYID"
           
-          # Create source repository
-          REPO_NAME="kivotos-source"
-          aptly repo create -component="$COMPONENT" -distribution="trixie" "$REPO_NAME" || true
+          # Create repository
+          REPO_NAME="kivotos"
+          aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
           
-          # Add source packages
-          find all-source-artifacts -name "*.dsc" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          # Add packages
+          find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
           
           echo "Source repo contents after add:"
           aptly repo show -with-packages "$REPO_NAME"
           
-          # Publish source repository
+          # Publish repository
           for distro in $DISTROS; do
-            echo "Publishing source for distro: $distro"
+            echo "Publishing for distro: $distro"
             aptly publish drop "$distro" filesystem:root: || true
             aptly publish repo \
             -distribution="$distro" \
-            -architectures=source \
+            -architectures=amd64 \
             -gpg-key="$KEYID" \
             -passphrase="$GPG_PASSPHRASE" \
             "$REPO_NAME" filesystem:root:
@@ -300,15 +232,15 @@ jobs:
             cp -a .aptly/public/* . || true
           fi
           
-          # Copy source packages to source-packages directory
-          mkdir -p source-packages
-          find all-source-artifacts -name "*.dsc" -o -name "*.tar.gz" | while read file; do
-            cp "$file" source-packages/
+          # Copy binary packages to pool directory
+          mkdir -p pool/main
+          find all-artifacts -name "*.deb" | while read file; do
+            cp "$file" pool/main/
           done
           
           echo "Produced files:"
           ls -la dists || true
-          ls -la source-packages || true
+          ls -la pool || true
           ls -la Release* InRelease* || true
           
           # Export public key
