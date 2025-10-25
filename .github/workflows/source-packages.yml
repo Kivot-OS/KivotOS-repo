@@ -74,16 +74,21 @@ jobs:
           case "${TYPE}" in
             cargo)
               git clone --depth=1 "$CLONE_URL" src
-              pushd src
               
-              if [ -f Cargo.toml ]; then
+              if [ -f src/Cargo.toml ]; then
                 # Tạo source package cho Rust projects
                 NAME="${{ matrix.name }}"
-                VERSION="$(cargo metadata --format-version 1 | jq -r '.packages[0].version')"
+                VERSION="$(cd src && cargo metadata --format-version 1 | jq -r '.packages[0].version')"
                 DESCRIPTION="${{ matrix.description }}"
+                
+                # Rename directory to match dpkg-source requirements
+                mv src "${NAME}-${VERSION}"
+                pushd "${NAME}-${VERSION}"
                 
                 # Tạo debian directory
                 mkdir -p debian
+                mkdir -p debian/source
+                echo "3.0 (quilt)" > debian/source/format
                 printf '%s\n' \
                   "Source: ${NAME}" \
                   "Section: utils" \
@@ -121,7 +126,7 @@ jobs:
                 
                 # Tạo source package
                 dpkg-source -b .
-                mv *.dsc *.tar.gz "$ART"
+                mv ../*.dsc ../*.tar.gz "$ART"
               else
                 echo "⚠️ Không tìm thấy Cargo.toml trong repo $REPO"
               fi
@@ -130,14 +135,19 @@ jobs:
 
             make)
               git clone --depth=1 "$CLONE_URL" src
-              pushd src
               NAME="${{ matrix.name }}"
               BINARY="${{ matrix.binary }}"
               DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
               VER="0.0+git$(date -u +%Y%m%d)"
               
+              # Rename directory to match dpkg-source requirements
+              mv src "${NAME}-${VER}"
+              pushd "${NAME}-${VER}"
+              
               # Tạo debian directory
               mkdir -p debian
+              mkdir -p debian/source
+              echo "3.0 (quilt)" > debian/source/format
               printf '%s\n' \
                 "Source: ${NAME}" \
                 "Section: utils" \
@@ -175,7 +185,7 @@ jobs:
               
               # Tạo source package
               dpkg-source -b .
-              mv *.dsc *.tar.gz "$ART"
+              mv ../*.dsc ../*.tar.gz "$ART"
               popd
               ;;
 
