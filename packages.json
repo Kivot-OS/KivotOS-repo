@@ -1,5 +1,12 @@
 {
   "distros": ["trixie"],
+  "repository": {
+    "name": "KivotOS",
+    "description": "KivotOS APT Repository - Source packages with binary releases",
+    "homepage": "https://dungdinhmanh.github.io/KivotOS-repo/",
+    "source_packages": true,
+    "binary_releases": true
+  },
   "packages": [
     {
       "name": "yazi",
@@ -7,21 +14,30 @@
       "source": "github.com",
       "repo": "sxyazi/yazi",
       "crates": ["yazi-fm", "yazi-cli"],
-      "description": "Blazing fast TUI file manager"
+      "description": "Blazing fast TUI file manager",
+      "homepage": "https://github.com/sxyazi/yazi",
+      "license": "MIT",
+      "categories": ["file-manager", "tui", "rust"]
     },
     {
       "name": "hellwal",
       "type": "make",
       "source": "github.com",
       "repo": "danihek/hellwal",
-      "description": "Color palette generator (Pywal-like) written in C++"
+      "description": "Color palette generator (Pywal-like) written in C++",
+      "homepage": "https://github.com/danihek/hellwal",
+      "license": "MIT",
+      "categories": ["colors", "wallpaper", "c++"]
     },
     {
       "name": "wallust",
       "type": "cargo",
       "source": "codeberg.org",
       "repo": "explosion-mental/wallust",
-      "description": "Generate color palettes for wallpapers"
+      "description": "Generate color palettes for wallpapers",
+      "homepage": "https://codeberg.org/explosion-mental/wallust",
+      "license": "MIT",
+      "categories": ["colors", "wallpaper", "rust"]
     }
   ]
 }

@@ -1,0 +1,321 @@
+name: source-packages
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packages.json'
+      - '.github/workflows/source-packages.yml'
+  schedule:
+    - cron: "0 3 1 * *"
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: source-publish
+  cancel-in-progress: false
+
+env:
+  COMPONENT: main
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.read.outputs.packages }}
+      distros:  ${{ steps.read.outputs.distros }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          set -euo pipefail
+          if [ ! -f packages.json ]; then
+            echo '{"distros":["trixie"],"packages":[]}' > packages.json
+          fi
+          echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
+          echo "distros=$(jq -r '.distros|join(" ")' packages.json)" >> "$GITHUB_OUTPUT"
+
+  build-source:
+    name: build source ${{ matrix.name }}
+    needs: matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.matrix.outputs.packages) }}
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl git dpkg-dev build-essential cmake pkg-config
+          if [ "${{ matrix.type }}" = "cargo" ]; then
+            sudo apt-get install -y rustc cargo
+          fi
+
+      - name: Build Source Package
+        shell: bash
+        env:
+          CRATES: ${{ toJson(matrix.crates) }}
+          SRC: ${{ matrix.source }}
+          REPO: ${{ matrix.repo }}
+          TYPE: ${{ matrix.type }}
+        run: |
+          set -euo pipefail
+          ART="${GITHUB_WORKSPACE}/source-artifacts"
+          mkdir -p "$ART"
+
+          # === Tạo URL clone dựa vào source ===
+          CLONE_URL="https://${SRC}/${REPO}"
+
+          echo "🔗 Clone URL: $CLONE_URL"
+          echo "📦 Package type: ${TYPE}"
+
+          case "${TYPE}" in
+            cargo)
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              
+              if [ -f Cargo.toml ]; then
+                # Tạo source package cho Rust projects
+                NAME="${{ matrix.name }}"
+                VERSION="$(cargo metadata --format-version 1 | jq -r '.packages[0].version')"
+                DESCRIPTION="${{ matrix.description }}"
+                
+                # Tạo debian directory
+                mkdir -p debian
+                cat > debian/control <<EOF
+Source: ${NAME}
+Section: utils
+Priority: optional
+Maintainer: KivotOS <maintainers@kivotos.local>
+Build-Depends: debhelper (>= 13), rustc, cargo
+Standards-Version: 4.6.0
+Homepage: ${CLONE_URL}
+
+Package: ${NAME}
+Architecture: any
+Depends: \${shlibs:Depends}, \${misc:Depends}
+Description: ${DESCRIPTION}
+EOF
+                
+                # Tạo rules file
+                cat > debian/rules <<'EOF'
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release --locked
+
+override_dh_auto_install:
+	install -Dm755 target/release/${NAME} debian/${NAME}/usr/bin/${NAME}
+EOF
+                chmod +x debian/rules
+                
+                # Tạo changelog
+                cat > debian/changelog <<EOF
+${NAME} (${VERSION}-1) trixie; urgency=medium
+
+  * Initial release
+
+ -- KivotOS <maintainers@kivotos.local>  $(date -R)
+EOF
+                
+                # Tạo source package
+                dpkg-source -b .
+                mv *.dsc *.tar.gz "$ART"
+              else
+                echo "⚠️ Không tìm thấy Cargo.toml trong repo $REPO"
+              fi
+              popd
+              ;;
+
+            make)
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              NAME="${{ matrix.name }}"
+              BINARY="${{ matrix.binary }}"
+              DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
+              VER="0.0+git$(date -u +%Y%m%d)"
+              
+              # Tạo debian directory
+              mkdir -p debian
+              cat > debian/control <<EOF
+Source: ${NAME}
+Section: utils
+Priority: optional
+Maintainer: KivotOS <maintainers@kivotos.local>
+Build-Depends: debhelper (>= 13), build-essential
+Standards-Version: 4.6.0
+Homepage: ${CLONE_URL}
+
+Package: ${NAME}
+Architecture: any
+Depends: \${shlibs:Depends}, \${misc:Depends}
+Description: ${DESC}
+EOF
+              
+              # Tạo rules file
+              cat > debian/rules <<'EOF'
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_build:
+	make
+
+override_dh_auto_install:
+	install -Dm755 ${BINARY} debian/${NAME}/usr/bin/${NAME}
+EOF
+              chmod +x debian/rules
+              
+              # Tạo changelog
+              cat > debian/changelog <<EOF
+${NAME} (${VER}-1) trixie; urgency=medium
+
+  * Initial release
+
+ -- KivotOS <maintainers@kivotos.local>  $(date -R)
+EOF
+              
+              # Tạo source package
+              dpkg-source -b .
+              mv *.dsc *.tar.gz "$ART"
+              popd
+              ;;
+
+            *) echo "Unknown type: ${TYPE}"; exit 1;;
+          esac
+
+          echo "✅ Source package build complete for ${{ matrix.name }}"
+          ls -lh "$ART"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-${{ matrix.name }}
+          path: source-artifacts/*.dsc source-artifacts/*.tar.gz
+          retention-days: 1
+
+  publish-source:
+    name: publish source packages
+    needs: [matrix, build-source]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y aptly
+      - name: Download all source packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: source-*
+          path: all-source-artifacts
+      - name: Cache aptly DB
+        uses: actions/cache@v4
+        with:
+          path: .aptly
+          key: aptly-source-db-v1
+          restore-keys: |
+            aptly-source-db-
+      - name: Configure GPG
+        run: |
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          printf 'pinentry-mode loopback\nbatch\n' > ~/.gnupg/gpg.conf
+          printf 'allow-loopback-pinentry\n' > ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
+
+      - name: Publish Source Packages
+        env:
+          DISTROS: ${{ needs.matrix.outputs.distros }}
+          COMPONENT: ${{ env.COMPONENT }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          DISTROS_RAW="${{ needs.matrix.outputs.distros }}"
+          if [ -z "${DISTROS_RAW:-}" ]; then
+            echo "WARN: DISTROS empty, defaulting to 'trixie'"
+            DISTROS="trixie"
+          else
+            DISTROS="$DISTROS_RAW"
+          fi
+          echo "DISTROS=${DISTROS}"
+          
+          # Clean up old files
+          rm -rf dists pool *.gpg Release* InRelease
+          
+          # Configure aptly
+          cat > ~/.aptly.conf <<'JSON'
+          {
+            "rootDir": ".aptly",
+            "downloadConcurrency": 4,
+            "FileSystemPublishEndpoints": {
+              "root": {
+                "rootDir": ".",
+                "linkMethod": "copy"
+              }
+            }
+          }
+          JSON
+          
+          # Import GPG key
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
+          if [ -z "${KEYID:-}" ]; then
+            echo "ERROR: GPG KEYID empty. Check GPG_PRIVATE_KEY secret."
+            exit 1
+          fi
+          echo "Using GPG KEYID: $KEYID"
+          
+          # Create source repository
+          REPO_NAME="kivotos-source"
+          aptly repo create -component="$COMPONENT" -distribution="trixie" "$REPO_NAME" || true
+          
+          # Add source packages
+          find all-source-artifacts -name "*.dsc" -exec aptly repo add -force-replace "$REPO_NAME" {} +
+          
+          echo "Source repo contents after add:"
+          aptly repo show -with-packages "$REPO_NAME"
+          
+          # Publish source repository
+          for distro in $DISTROS; do
+            echo "Publishing source for distro: $distro"
+            aptly publish drop "$distro" filesystem:root: || true
+            aptly publish repo \
+            -distribution="$distro" \
+            -architectures=source \
+            -gpg-key="$KEYID" \
+            -passphrase="$GPG_PASSPHRASE" \
+            "$REPO_NAME" filesystem:root:
+          done
+          
+          # Copy files to repository root
+          if [ -d ".aptly/public" ]; then
+            echo "Copying .aptly/public -> repo root"
+            cp -a .aptly/public/* . || true
+          fi
+          
+          # Copy source packages to source-packages directory
+          mkdir -p source-packages
+          find all-source-artifacts -name "*.dsc" -o -name "*.tar.gz" | while read file; do
+            cp "$file" source-packages/
+          done
+          
+          echo "Produced files:"
+          ls -la dists || true
+          ls -la source-packages || true
+          ls -la Release* InRelease* || true
+          
+          # Export public key
+          gpg --armor --export "$KEYID" > pubkey.gpg
+          
+          # Commit changes
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A .
+          git diff --staged --quiet || {
+            git commit -m "🚀 Update source packages [$(date -u +%Y-%m-%d)]"
+            git push origin main
+          } || echo "No changes to commit"

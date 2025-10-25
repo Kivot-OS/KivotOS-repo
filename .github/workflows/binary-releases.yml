@@ -1,0 +1,192 @@
+name: binary-releases
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packages.json'
+      - '.github/workflows/binary-releases.yml'
+  schedule:
+    - cron: "0 3 1 * *"
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: binary-releases
+  cancel-in-progress: false
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.read.outputs.packages }}
+      distros:  ${{ steps.read.outputs.distros }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          set -euo pipefail
+          if [ ! -f packages.json ]; then
+            echo '{"distros":["trixie"],"packages":[]}' > packages.json
+          fi
+          echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
+          echo "distros=$(jq -r '.distros|join(" ")' packages.json)" >> "$GITHUB_OUTPUT"
+
+  build-binary:
+    name: build binary ${{ matrix.name }}
+    needs: matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.matrix.outputs.packages) }}
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl git dpkg-dev build-essential cmake pkg-config
+          if [ "${{ matrix.type }}" = "cargo" ]; then
+            sudo apt-get install -y rustc cargo
+            cargo install cargo-deb --locked
+          fi
+
+      - name: Build Binary Package
+        shell: bash
+        env:
+          CRATES: ${{ toJson(matrix.crates) }}
+          SRC: ${{ matrix.source }}
+          REPO: ${{ matrix.repo }}
+          TYPE: ${{ matrix.type }}
+        run: |
+          set -euo pipefail
+          ART="${GITHUB_WORKSPACE}/binary-artifacts"
+          mkdir -p "$ART"
+
+          # === Tạo URL clone dựa vào source ===
+          CLONE_URL="https://${SRC}/${REPO}"
+
+          echo "🔗 Clone URL: $CLONE_URL"
+          echo "📦 Package type: ${TYPE}"
+
+          case "${TYPE}" in
+            cargo)
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              
+              if [ -f Cargo.toml ]; then
+                if cargo deb --help >/dev/null 2>&1; then
+                  if [ "${CRATES}" != "null" ]; then
+                    echo "$CRATES" | jq -r '.[]' | while read -r C; do
+                      cargo deb -p "$C" --locked
+                    done
+                  else
+                    cargo deb --locked
+                  fi
+                  mv target/debian/*.deb "$ART"
+                else
+                  cargo build --release --locked
+                  install -Dm755 target/release/* "$ART/"
+                fi
+              else
+                echo "⚠️ Không tìm thấy Cargo.toml trong repo $REPO"
+              fi
+              popd
+              ;;
+
+            make)
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              NAME="${{ matrix.name }}"
+              BINARY="${{ matrix.binary }}"
+              DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
+              VER="0.0+git$(date -u +%Y%m%d)"
+              make
+              mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
+              install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
+              [ -f README.md ] && install -Dm644 README.md "pkg/usr/share/doc/${NAME}/README.md" || true
+              printf '%s\n' \
+                "Package: ${NAME}" \
+                "Version: ${VER}-1" \
+                "Section: utils" \
+                "Priority: optional" \
+                "Architecture: amd64" \
+                "Maintainer: KivotOS <maintainers@kivotos.local>" \
+                "Homepage: $CLONE_URL" \
+                "Description: ${DESC}" > pkg/DEBIAN/control
+              dpkg-deb -Zxz --uniform-compression --build pkg "${NAME}_${VER}-1_amd64.deb"
+              mv "${NAME}_${VER}-1_amd64.deb" "$ART"
+              popd
+              ;;
+
+            mirror)
+              echo "🔍 Fetching mirror from ${SRC}"
+              API="https://api.${SRC}/repos/${REPO}/releases/latest"
+              curl -fsSL "$API" | jq -r '.assets[] | .browser_download_url' \
+                | grep -E "${{ matrix.pattern }}" \
+                | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "$ART/$FN"; done
+              ;;
+            *) echo "Unknown type: ${TYPE}"; exit 1;;
+          esac
+
+          echo "✅ Binary build complete for ${{ matrix.name }}"
+          ls -lh "$ART"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.name }}
+          path: binary-artifacts/*.deb
+          retention-days: 1
+
+  create-release:
+    name: create GitHub release
+    needs: [matrix, build-binary]
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          path: all-binary-artifacts
+      
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: KivotOS Packages v${{ github.run_number }}
+          body: |
+            ## KivotOS Binary Packages
+            
+            This release contains pre-built binary packages for KivotOS.
+            
+            ### Installation
+            
+            You can install these packages using APT:
+            ```bash
+            # Add repository
+            curl -fsSL https://dungdinhmanh.github.io/KivotOS-repo/pubkey.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg
+            
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
+            https://dungdinhmanh.github.io/KivotOS-repo/ trixie main" \
+            | sudo tee /etc/apt/sources.list.d/kivotos.list
+            
+            # Install packages
+            sudo apt update
+            sudo apt install yazi-cli yazi-fm hellwal wallust
+            ```
+            
+            ### Packages included:
+            - yazi-cli, yazi-fm: Blazing fast TUI file manager
+            - hellwal: Color palette generator
+            - wallust: Generate color palettes for wallpapers
+            
+            ### Source packages
+            
+            For source packages and building from source, see the main repository.
+          files: all-binary-artifacts/**/*.deb
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

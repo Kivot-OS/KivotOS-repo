@@ -1,0 +1,5 @@
+# This workflow has been replaced by source-packages.yml and binary-releases.yml
+# The old workflow is disabled to prevent conflicts
+
+# To re-enable, rename this file back to apt-packages.yml
+# But it's recommended to use the new source-based approach
