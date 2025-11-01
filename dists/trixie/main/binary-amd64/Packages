@@ -3,13 +3,28 @@ Priority: optional
 Section: utils
 Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
+Version: 0.0+git20251101-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20251101-1_amd64.deb
+Size: 90820
+MD5sum: 12bce292075dd04e8e276a756771e210
+SHA1: e3e6efe89068f3284f7bcab51930e24b0c0b19ae
+SHA256: fc3097b42b5a807b3566ac0f993c3bfaf209dd20ebdcf18effcf3cc0ecac8de3
+SHA512: 681ff9e34e28ad51c524b490408a8a1b0cf4da3a903dfb3e63bd995ed4641db18721e55add7ff72d9111a0725a21005e86d5094cec2bba132e1d849184d1de4a
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: KivotOS <maintainers@kivotos.local>
+Architecture: amd64
 Version: 0.0+git20251026-1
 Filename: pool/main/h/hellwal/hellwal_0.0+git20251026-1_amd64.deb
-Size: 91028
-MD5sum: 83362b4367ce4380518a8c3f4d4336e6
-SHA1: cf610d2b31342f357a8c454f6161ae0467a764ff
-SHA256: a848021376796e7865ad24b2da574a95df4f734634fb2ec1b59e7b79d18adbc2
-SHA512: 1d5920bf763a95e93997739b14178881c321499b2ad28c82b493195e2ba599dcce4b43950f67c92f2258d467fc03733fa5324e8b647f891e6b84a164364d4447
+Size: 90856
+MD5sum: bdd8d7356130322a88bbf2de4001b79d
+SHA1: 1eacc9b2e5d6cf9d57b916fff12ff60694c0ea61
+SHA256: 642cd03a64e2ad4e9f4746cd02f59b357bc1ae024b254babc4b758bc7d4def96
+SHA512: 57d149d5130abb4c51103fa17aa8a1e04a6490179d15491371d88695dbefd8db6d4e0a429ec719b53ca23d6e70460c30644525dd93b76b4b392a4656ec17d0a5
 Description: Color palette generator (Pywal-like) written in C++
 Homepage: https://github.com/danihek/hellwal
 
@@ -21,11 +36,11 @@ Architecture: amd64
 Version: 3.4.0-1
 Depends: libc6 (>= 2.35)
 Filename: pool/main/w/wallust/wallust_3.4.0-1_amd64.deb
-Size: 1663920
-MD5sum: ba5386492863c454ab922afad86e07a6
-SHA1: 17e332da04a3d51caae888680b5d68234aa78bca
-SHA256: de1f67ebe20dd12790b5419f53b9f566c367cf323c8863fcfeb2dd9cd30c5f9d
-SHA512: a22aa1000ceeee13de03acbd828547cbddf3b140625b338d1db556dae934307e8949dd8060683d138d135c272602c731e7b21cdb0b988d30cf6ada3303c32dec
+Size: 1663820
+MD5sum: 56a6805fcea67e414b6ece87e2c95b61
+SHA1: d08c247fe6c5c7b5abcb24d05201e5e4849f4509
+SHA256: a86d0a56874e78f5888c233387604e988863bb25bbb8bb0fc36794912daa48de
+SHA512: ab47dd2331b75d9f0531914bf200e836a164f0738ffef4be95813d2deace8e2f6126736322b854f1a5638be9b9fc2f9c34c1f220ab550b5c7d7dd7fef4dd6b34
 Description: Generate a 16 color scheme based on an image.
  # wallust - Generate colors from an image
  [//]: # (ANCHOR: badges)
@@ -238,33 +253,33 @@ Homepage: https://explosion-mental.codeberg.page/wallust
 
 Package: yazi-cli
 Priority: optional
-Installed-Size: 1673
+Installed-Size: 1667
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
 Version: 25.9.15-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-cli/yazi-cli_25.9.15-1_amd64.deb
-Size: 612892
-MD5sum: fd8047dea0f82114027faebc866ad569
-SHA1: 1f6bbe65c481c80d7d73c27cfba1f454b26604d2
-SHA256: be75494285cb233ccd81026896034549582bec506f0ceea0417d08fd0c72cd87
-SHA512: 89e7a5e6e957c8de54ed9429617c0d06f84b40116e4fc9bdbcf31a4478ba30ba05ee188445aaa8596d4b70da2f8fe58814f1eaa36399520c35d6aa21e1afb9d2
+Size: 610880
+MD5sum: b594b6b210ea35b090b5e38b99a3bcea
+SHA1: f1c1473c674b08b25d369981c32eb82a11ba0687
+SHA256: b47edaebbbd0cf07f03940b11ad551d896f9d2bab607a9163395990aae48c778
+SHA512: 2395ac664e7b355e318f039e50ac427fc28dd0f8d2e60f24bcc3652807ef3c146f5aaf8848df4d5596e76717bbe1dda1b6e3a269ffae7bf6016dcf0527241b24
 Description: Yazi command-line interface
 Homepage: https://yazi-rs.github.io
 
 Package: yazi-fm
 Priority: optional
-Installed-Size: 21128
+Installed-Size: 21135
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
 Version: 25.9.15-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-fm/yazi-fm_25.9.15-1_amd64.deb
-Size: 6121332
-MD5sum: 12f4ff115270bda394855f708eaea4c5
-SHA1: 44a31641222048f6f7422ea8edf923d29e0d87be
-SHA256: 52bbfb79b0a9aeaf1b937a81ac637739eb63c8016f925d877514ae1089d57964
-SHA512: c1a1251144bfa870a73d31696e15010d70062d1392b5abc8edca2b14113342f5e16733620f01072f5feeff5865a65d283efb8f437c4815802107d56dd4ba2140
+Size: 6131468
+MD5sum: f86f1d7d8bd56327eaf4b2e7e7b04827
+SHA1: c3950f919aa26eeca6c616d196a5a21c77ddd376
+SHA256: 92d66f8781462b67a42823069a96058b92bca5e9a28dfcc30f545cc987744cc4
+SHA512: 453506d8af6b97e782e311933295e1407e5d7db684e1fe15526efb02d35c2eeb25db3be7777b1497438595972cf5ae11ffe99f271d94f8865c90babd741b1368
 Description: Yazi file manager
 Homepage: https://yazi-rs.github.io
 
