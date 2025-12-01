@@ -3,44 +3,29 @@ Priority: optional
 Section: utils
 Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
-Version: 0.0+git20251101-1
-Filename: pool/main/h/hellwal/hellwal_0.0+git20251101-1_amd64.deb
-Size: 90820
-MD5sum: 12bce292075dd04e8e276a756771e210
-SHA1: e3e6efe89068f3284f7bcab51930e24b0c0b19ae
-SHA256: fc3097b42b5a807b3566ac0f993c3bfaf209dd20ebdcf18effcf3cc0ecac8de3
-SHA512: 681ff9e34e28ad51c524b490408a8a1b0cf4da3a903dfb3e63bd995ed4641db18721e55add7ff72d9111a0725a21005e86d5094cec2bba132e1d849184d1de4a
-Description: Color palette generator (Pywal-like) written in C++
-Homepage: https://github.com/danihek/hellwal
-
-Package: hellwal
-Priority: optional
-Section: utils
-Maintainer: KivotOS <maintainers@kivotos.local>
-Architecture: amd64
-Version: 0.0+git20251026-1
-Filename: pool/main/h/hellwal/hellwal_0.0+git20251026-1_amd64.deb
-Size: 90856
-MD5sum: bdd8d7356130322a88bbf2de4001b79d
-SHA1: 1eacc9b2e5d6cf9d57b916fff12ff60694c0ea61
-SHA256: 642cd03a64e2ad4e9f4746cd02f59b357bc1ae024b254babc4b758bc7d4def96
-SHA512: 57d149d5130abb4c51103fa17aa8a1e04a6490179d15491371d88695dbefd8db6d4e0a429ec719b53ca23d6e70460c30644525dd93b76b4b392a4656ec17d0a5
+Version: 0.0+git20251201-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20251201-1_amd64.deb
+Size: 91068
+MD5sum: 83227936a91697ba09bea994b808b14e
+SHA1: d1cc6eb628c618c6127d61ddab5c53af20520451
+SHA256: 09697fa3e6f1e0a0c62c627b2fa8f92d8c9bce1581e50e54ba71b5bfc3ef85f8
+SHA512: 3c1186fca8e9470192925fdf0c38421d9abdc1c5ea1d6da5681fb261dad0d730765129abeb68762456172efb531e224ff2dbb61e5ff302924781f7cc206a5693
 Description: Color palette generator (Pywal-like) written in C++
 Homepage: https://github.com/danihek/hellwal
 
 Package: wallust
 Priority: optional
-Installed-Size: 5540
+Installed-Size: 5932
 Maintainer: explosion-mental
 Architecture: amd64
 Version: 3.4.0-1
 Depends: libc6 (>= 2.35)
 Filename: pool/main/w/wallust/wallust_3.4.0-1_amd64.deb
-Size: 1663820
-MD5sum: 56a6805fcea67e414b6ece87e2c95b61
-SHA1: d08c247fe6c5c7b5abcb24d05201e5e4849f4509
-SHA256: a86d0a56874e78f5888c233387604e988863bb25bbb8bb0fc36794912daa48de
-SHA512: ab47dd2331b75d9f0531914bf200e836a164f0738ffef4be95813d2deace8e2f6126736322b854f1a5638be9b9fc2f9c34c1f220ab550b5c7d7dd7fef4dd6b34
+Size: 1756892
+MD5sum: 72ba9ff9ae3b95b44e5616f3059ff60a
+SHA1: 90eecd1bb33979a5c8aeb80a12ecaffec50aeda7
+SHA256: b458fc5c635259f1a1e8c5f26362b82ca2927ea6b5d2e4cffb895e8f6a9d0085
+SHA512: 75c18186f7499d5f2ff21730ebbd2290159e6b81eccb0915177aeb8d40c7491b3f6674a53853093995df4505c1c36efddd4e51c2e7a2ad71c53ed6d5621ab021
 Description: Generate a 16 color scheme based on an image.
  # wallust - Generate colors from an image
  [//]: # (ANCHOR: badges)
@@ -253,33 +238,45 @@ Homepage: https://explosion-mental.codeberg.page/wallust
 
 Package: yazi-cli
 Priority: optional
-Installed-Size: 1667
+Installed-Size: 1699
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
 Version: 25.9.15-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-cli/yazi-cli_25.9.15-1_amd64.deb
-Size: 610880
-MD5sum: b594b6b210ea35b090b5e38b99a3bcea
-SHA1: f1c1473c674b08b25d369981c32eb82a11ba0687
-SHA256: b47edaebbbd0cf07f03940b11ad551d896f9d2bab607a9163395990aae48c778
-SHA512: 2395ac664e7b355e318f039e50ac427fc28dd0f8d2e60f24bcc3652807ef3c146f5aaf8848df4d5596e76717bbe1dda1b6e3a269ffae7bf6016dcf0527241b24
+Size: 621288
+MD5sum: b77a072fb0f6e2744c441094b8702e1b
+SHA1: 68e39f811ffee5c8309d5031d011a11ee308f003
+SHA256: cc8a3032b6749eebdb49d9810ead92ba292e87464d6eaa074963a4deb6d424ec
+SHA512: e3995cf6650564d4805a99dc23aaba63e41fd6eac3b79b582ba46c91ab8710442e0038d32e49383ed92148fa406e3618f8bd725581d6e2670ff0cbcf50bbfdce
 Description: Yazi command-line interface
+ # yazi-cli
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
 Homepage: https://yazi-rs.github.io
 
 Package: yazi-fm
 Priority: optional
-Installed-Size: 21135
+Installed-Size: 21462
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
 Version: 25.9.15-1
 Depends: libc6 (>= 2.34)
 Filename: pool/main/y/yazi-fm/yazi-fm_25.9.15-1_amd64.deb
-Size: 6131468
-MD5sum: f86f1d7d8bd56327eaf4b2e7e7b04827
-SHA1: c3950f919aa26eeca6c616d196a5a21c77ddd376
-SHA256: 92d66f8781462b67a42823069a96058b92bca5e9a28dfcc30f545cc987744cc4
-SHA512: 453506d8af6b97e782e311933295e1407e5d7db684e1fe15526efb02d35c2eeb25db3be7777b1497438595972cf5ae11ffe99f271d94f8865c90babd741b1368
+Size: 6164936
+MD5sum: de653bd9b54fe46ef1c135ff0b877f11
+SHA1: 83fb3e2eca7be6a86ebfe9aefb90c9ab840364ce
+SHA256: e832db263cb93de2a888793e1900be88d358676601385c40792c27245f257134
+SHA512: 78ec8a52bfa305c86af29afdfeb540e169ac23843489b7f67df9a118ff7decf786781ca6f995c5ea4fc7cedb6ca841896487b704f12c8209d64641d5659810b0
 Description: Yazi file manager
+ # yazi-fm
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
 Homepage: https://yazi-rs.github.io
 
