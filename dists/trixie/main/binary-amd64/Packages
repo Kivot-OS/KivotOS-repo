@@ -3,6 +3,21 @@ Priority: optional
 Section: utils
 Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
+Version: 0.0+git20260101-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20260101-1_amd64.deb
+Size: 91024
+MD5sum: 32bd0e15ac83864024f0246ae757f05f
+SHA1: 81e7bafc545def35d6c3f53877322c8dae9ba028
+SHA256: b5d86771a668d782fd0177f828995153efc8f50f29c5672d095ee2c850cdecdc
+SHA512: c0fa384383d17e76461eef52e3304aef9e4d6fd461bb578caf0171a2db3e527381a74d5c0f7b4bc593e7c04a1e62e4e12580a6aac1a57dbd15d4c7e128a855f3
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: KivotOS <maintainers@kivotos.local>
+Architecture: amd64
 Version: 0.0+git20251201-1
 Filename: pool/main/h/hellwal/hellwal_0.0+git20251201-1_amd64.deb
 Size: 91068
@@ -15,17 +30,17 @@ Homepage: https://github.com/danihek/hellwal
 
 Package: wallust
 Priority: optional
-Installed-Size: 5932
+Installed-Size: 7838
 Maintainer: explosion-mental
 Architecture: amd64
 Version: 3.4.0-1
 Depends: libc6 (>= 2.35)
 Filename: pool/main/w/wallust/wallust_3.4.0-1_amd64.deb
-Size: 1756892
-MD5sum: 72ba9ff9ae3b95b44e5616f3059ff60a
-SHA1: 90eecd1bb33979a5c8aeb80a12ecaffec50aeda7
-SHA256: b458fc5c635259f1a1e8c5f26362b82ca2927ea6b5d2e4cffb895e8f6a9d0085
-SHA512: 75c18186f7499d5f2ff21730ebbd2290159e6b81eccb0915177aeb8d40c7491b3f6674a53853093995df4505c1c36efddd4e51c2e7a2ad71c53ed6d5621ab021
+Size: 2090432
+MD5sum: 9c43c94f2891976350180efc1e4a7a6a
+SHA1: 67342b587d88d8321b933f9c995b470ada2a40af
+SHA256: e954c9d9bb0eba46c6678a0aa7a0bd2c6ff710005fdfb3701a7aef3a479d3152
+SHA512: 9cb3ae4089898109f391378efbfa0e96f4412107f77d36319b11cea564547caa8008a433adba99c758afdc93a0b10345660b1a7bdaf89238507098508068dcc9
 Description: Generate a 16 color scheme based on an image.
  # wallust - Generate colors from an image
  [//]: # (ANCHOR: badges)
@@ -238,6 +253,28 @@ Homepage: https://explosion-mental.codeberg.page/wallust
 
 Package: yazi-cli
 Priority: optional
+Installed-Size: 1684
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.12.29-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-cli/yazi-cli_25.12.29-1_amd64.deb
+Size: 608184
+MD5sum: e782999de200019dd9f5a90bf72ef453
+SHA1: 5a8e4edacf08d848099cfdd1cfa29d597ee69986
+SHA256: 3f7c0af7e3f237370284a36d213e49d9086ddd9d69534c9df3019b8386355fc3
+SHA512: 24d9a7835d8e3f1a8f07155e2c0a27fca5b901fd26a1e54199061324988c0ee6b985324dac5f9fee79bcf8ea298fdd49eedd046eb862c60cd872db8c9cfd5922
+Description: Yazi command-line interface
+ # yazi-cli
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-cli
+Priority: optional
 Installed-Size: 1699
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
@@ -251,6 +288,28 @@ SHA256: cc8a3032b6749eebdb49d9810ead92ba292e87464d6eaa074963a4deb6d424ec
 SHA512: e3995cf6650564d4805a99dc23aaba63e41fd6eac3b79b582ba46c91ab8710442e0038d32e49383ed92148fa406e3618f8bd725581d6e2670ff0cbcf50bbfdce
 Description: Yazi command-line interface
  # yazi-cli
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-fm
+Priority: optional
+Installed-Size: 21943
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.12.29-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-fm/yazi-fm_25.12.29-1_amd64.deb
+Size: 6267408
+MD5sum: 5e08c5423fda9042e1808025509f904b
+SHA1: 77aa28a17d139be8d9f70d35cfd41f427d05b7c5
+SHA256: 197bf1039d46c2202685665932605ef85c6f42c9901ec593667a6ea6d8f55c7f
+SHA512: 913b2032bb5a0e674c4a9219c41a1579846dc5dd65ce599e98ad570dbb3cd0d10a777cfb2daaca72ab1ceff7c4cba297e2275a317d87a0832ff429cf0cc17fb2
+Description: Yazi file manager
+ # yazi-fm
  .
  This crate is part of [Yazi][source], and it is not supposed to be used
  outside, as there are no guarantees about the stability of its API.
