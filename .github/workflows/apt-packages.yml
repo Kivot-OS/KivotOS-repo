@@ -33,13 +33,13 @@ jobs:
           if [ ! -f packages.json ]; then
             echo '{"distros":["trixie"],"packages":[]}' > packages.json
           fi
-          echo "packages=$(jq -c '.packages' packages.json | tr -d '\n')" >> "$GITHUB_OUTPUT"
+          echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
           echo "distros=$(jq -r '.distros|join(\" \")' packages.json)" >> "$GITHUB_OUTPUT"
 
   build:
     name: build ${{ matrix.name }}
     needs: matrix
-    runs-on: debian
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
