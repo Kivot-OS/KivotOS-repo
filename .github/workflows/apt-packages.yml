@@ -74,6 +74,27 @@ jobs:
           echo "🔗 Clone URL: $CLONE_URL"
           echo "📦 Package type: ${TYPE}"
 
+          # === Tự động lấy phiên bản mới nhất ===
+          echo "🔍 Detecting latest version..."
+          case "${SRC}" in
+            github.com)
+              VER=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name | sed 's/^v//')
+              ;;
+            codeberg.org)
+              # Codeberg (Gitea) API lấy release đầu tiên
+              VER=$(curl -fsSL "https://codeberg.org/api/v1/repos/${REPO}/releases" | jq -r '.[0].tag_name' | sed 's/^v//')
+              ;;
+            *) VER="" ;;
+          esac
+
+          # Fallback nếu không lấy được qua API
+          if [ -z "$VER" ] || [ "$VER" == "null" ]; then
+             VER="0.0.0+git$(date -u +%Y%m%d)"
+             echo "⚠️ Could not detect version from API, using fallback: $VER"
+          else
+             echo "✅ Detected version: $VER"
+          fi
+
           case "${TYPE}" in
             cargo)
               git clone --depth=1 "$CLONE_URL" src
@@ -105,7 +126,7 @@ jobs:
               NAME="${{ matrix.name }}"
               BINARY="${{ matrix.binary }}"
               DESC="${{ matrix.description }}"; : "${DESC:=Package built by KivotOS CI}"
-              VER="0.0+git$(date -u +%Y%m%d)"
+              
               make
               mkdir -p pkg/DEBIAN pkg/usr/bin "pkg/usr/share/doc/${NAME}"
               install -Dm755 "$BINARY" "pkg/usr/bin/${NAME}" || install -Dm755 "${NAME}" "pkg/usr/bin/${NAME}"
@@ -133,9 +154,12 @@ jobs:
               ;;
 
             custom)
-              echo "📜 Running repo's build script: ${{ matrix.script }}"
+              echo "📜 Running repo's build script with version: $VER"
               git clone --depth=1 "$CLONE_URL" src
               pushd src
+              
+              # Export VER để script build của họ có thể lấy (nếu họ code script nhận env)
+              export APP_VERSION="$VER"
               
               # Extract script path and arguments
               SCRIPT_CMD="${{ matrix.script }}"
@@ -214,20 +238,21 @@ jobs:
             DISTROS="$DISTROS_RAW"
           fi
           echo "DISTROS=${DISTROS}"
-          rm -rf public
-          mkdir public
+          # Chuẩn bị thư mục xuất dữ liệu
+          mkdir -p repo-public
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
             "downloadConcurrency": 4,
             "FileSystemPublishEndpoints": {
               "root": {
-                "rootDir": ".",
+                "rootDir": "./repo-public",
                 "linkMethod": "copy"
               }
             }
           }
           JSON
+
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           KEYID=$(gpg --list-keys --with-colons | awk -F: '/^pub/{print $5; exit}')
           if [ -z "${KEYID:-}" ]; then
@@ -235,34 +260,64 @@ jobs:
             exit 1
           fi
           echo "Using GPG KEYID: $KEYID"
+
           REPO_NAME="kivotos"
           aptly repo create -component="$COMPONENT" "$REPO_NAME" || true
+
+          # Thêm các gói mới vào local repo
           find all-artifacts -name "*.deb" -exec aptly repo add -force-replace "$REPO_NAME" {} +
-          echo "Repo contents after add:"
-          aptly repo show -with-packages "$REPO_NAME"
+
           for distro in $DISTROS; do
-            echo "Publishing for distro: $distro"
-            aptly publish drop "$distro" filesystem:root: || true
-            aptly publish repo \
-            -distribution="$distro" \
-            -architectures=amd64 \
-            -gpg-key="$KEYID" \
-            -passphrase="$GPG_PASSPHRASE" \
-            "$REPO_NAME" filesystem:root:
+            echo "Checking publication for distro: $distro"
+            # Kiểm tra xem distro đã được update/publish chưa
+            if aptly publish show "$distro" filesystem:root: >/dev/null 2>&1; then
+              echo "Updating existing publication..."
+              aptly publish update \
+                -gpg-key="$KEYID" \
+                -passphrase="$GPG_PASSPHRASE" \
+                "$distro" filesystem:root:
+            else
+              echo "Creating new publication..."
+              aptly publish repo \
+                -distribution="$distro" \
+                -architectures=amd64 \
+                -gpg-key="$KEYID" \
+                -passphrase="$GPG_PASSPHRASE" \
+                "$REPO_NAME" filesystem:root:
+            fi
           done
-          if [ -d ".aptly/public" ]; then
-            echo "Copying .aptly/public -> repo root"
-            cp -a .aptly/public/* ./public || true
-          fi
-          echo "Produced files:"
-          ls -la dists || true
-          ls -la pool || true
-          ls -la Release* InRelease* || true
-          gpg --armor --export "$KEYID" > pubkey.gpg
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add -A .
-          git diff --staged --quiet || {
-            git commit -m "🚀 Update APT repository [$(date -u +%Y-%m-%d)]"
-            git push origin main
-          } || echo "No changes to commit"
+
+          # Xuất public key
+          gpg --armor --export "$KEYID" > repo-public/pubkey.gpg
+
+          # === Tạo giao diện duyệt file (Directory Index) giống Debian Mirror ===
+          echo "🌐 Generating directory indexes..."
+          generate_index() {
+            local dir=$1
+            pushd "$dir" > /dev/null
+            local title="Index of /${dir#repo-public/}"
+            {
+              echo "<html><head><title>$title</title><style>body{font-family:monospace;background:#fff;color:#000;}hr{border:0;border-top:1px solid #ccc;}a{text-decoration:none;color:#00e;}a:hover{text-decoration:underline;}</style></head><body>"
+              echo "<h1>$title</h1><hr><pre><a href='../'>../</a>"
+              ls -1p | grep -v "index.html" | while read -r line; do
+                local mtime=$(date -r "$line" "+%d-%b-%Y %H:%M")
+                local size=$(du -sh "$line" | cut -f1)
+                printf "%-50s %20s %10s\n" "<a href='$line'>$line</a>" "$mtime" "$size"
+              done
+              echo "</pre><hr></body></html>"
+            } > index.html
+            popd > /dev/null
+          }
+          export -f generate_index
+          find repo-public -type d -exec bash -c 'generate_index "$0"' {} \;
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo-public
+          publish_branch: gh-pages
+          force_orphan: false # Giữ lại lịch sử các gói cũ
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "🚀 Update APT repository [$(date -u +%Y-%m-%d)]"
