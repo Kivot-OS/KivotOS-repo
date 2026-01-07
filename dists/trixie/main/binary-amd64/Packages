@@ -5,11 +5,11 @@ Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
 Version: 1.0.7-1
 Filename: pool/main/h/hellwal/hellwal_1.0.7-1_amd64.deb
-Size: 94920
-MD5sum: d33bad74491f506b5ca2ab5f1ae58063
-SHA1: 03ec0fce9210462505e2cc823c4b7eaad6e3d691
-SHA256: d309fd3b26885311be1abbe43507f6a37bc7552245f8576aac3c81a9097775e5
-SHA512: dc135f4520733e9e3ce8cc5e8951ebfbf24d3113fc3ad5c4d3ea07690c6f52e5ae0b9775192a5378db2c0a00a17fc4a68d9a5f321a650df8777d83046b100948
+Size: 94896
+MD5sum: f061508f124395417cb1c5a58425e5a9
+SHA1: 1c883b45f7a4715306d8dbe861b1840e639fb610
+SHA256: aa9298f56dfa3efe6e50b21291e05a5f5e0c2bfe0970e807f6ffce7599385c2c
+SHA512: ed8be596478cb0ac58c8cd9b1c379d8944de1698ad381a18fc7b840be3dace868d73d11d55cbfb8799e4ff923183430884a08e8c4466f8857ac3c59556eca982
 Description: Color palette generator (Pywal-like) written in C++
 Homepage: https://github.com/danihek/hellwal
 
