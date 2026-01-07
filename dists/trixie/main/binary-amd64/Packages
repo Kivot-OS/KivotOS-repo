@@ -1,0 +1,341 @@
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: KivotOS <maintainers@kivotos.local>
+Architecture: amd64
+Version: 0.0+git20260107-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20260107-1_amd64.deb
+Size: 94936
+MD5sum: f1170b7a6ea9c50f6fc4823488aa8a32
+SHA1: d26380809cb49c0ee53b1e1a4a23224d76a16104
+SHA256: 2a309ccadfbabc5a49e42db5273bd08326c4cdfe688cf7fd40f6d70e8c301ad8
+SHA512: 879bbafda8dc8cff1fe187ba5ecd25fa0e1ee0abf75bbb208e7db8aadb8c54b37837f1e10095d4e12972adc482d24140a97aec8d2bd5f97dff5519db5707b187
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: KivotOS <maintainers@kivotos.local>
+Architecture: amd64
+Version: 0.0+git20251201-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20251201-1_amd64.deb
+Size: 91068
+MD5sum: 83227936a91697ba09bea994b808b14e
+SHA1: d1cc6eb628c618c6127d61ddab5c53af20520451
+SHA256: 09697fa3e6f1e0a0c62c627b2fa8f92d8c9bce1581e50e54ba71b5bfc3ef85f8
+SHA512: 3c1186fca8e9470192925fdf0c38421d9abdc1c5ea1d6da5681fb261dad0d730765129abeb68762456172efb531e224ff2dbb61e5ff302924781f7cc206a5693
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: wallust
+Priority: optional
+Installed-Size: 7838
+Maintainer: explosion-mental
+Architecture: amd64
+Version: 3.4.0-1
+Depends: libc6 (>= 2.39)
+Filename: pool/main/w/wallust/wallust_3.4.0-1_amd64.deb
+Size: 2090752
+MD5sum: e91d375ed8a6c3bcfa4f4b304d66c1be
+SHA1: 0af3721c8d9105916ada4e8c6cf35434900ca49e
+SHA256: fc685293730d3d349a79d73446d6f26963f979a272f878bd64a7b8ba2771360a
+SHA512: 192e0cbe02b55af4f6c4503ec59d3cfbb80f52a755796a831892784248425de7bd993d569a4d348f7c9052ef6e224dd85adca3686e15cdcbb96dd7b357984294
+Description: Generate a 16 color scheme based on an image.
+ # wallust - Generate colors from an image
+ [//]: # (ANCHOR: badges)
+ .
+ [![crates-io](https://img.shields.io/crates/v/wallust?style=flat-square&color=red)](https://crates.io/crates/wallust)
+ [![downloads](https://img.shields.io/crates/d/wallust?style=flat-square&color=yellow)](https://crates.io/crates/wallust)
+ [![license](https://img.shields.io/crates/l/wallust?style=flat-square)](https://codeberg.org/explosion-mental/wallust/src/branch/main/LICENSE)
+ [![dependency-status](https://deps.rs/repo/codeberg/explosion-mental/wallust/status.svg?style=flat-square)](https://deps.rs/repo/codeberg/explosion-mental/wallust)
+ [![status-badge](https://ci.codeberg.org/api/badges/13317/status.svg)](https://ci.codeberg.org/repos/13317)
+ [![CodeBerg](https://img.shields.io/badge/Hosted_at-Codeberg-%232185D0?style=flat-square&logo=CodeBerg)](https://codeberg.org/explosion-mental/wallust)
+ [![MatrixChat](https://matrix.to/img/matrix-badge.svg)](https://matrix.to/#/#wal-lust:matrix.org)
+ .
+ [//]: # (ANCHOR_END: badges)
+ <br>
+ .
+ ![gif](https://explosion-mental.codeberg.page/img/other/wallust-2.6.gif
+ "wallust gif")
+ > sources:
+ [adwaita](https://gitlab.gnome.org/GNOME/gnome-backgrounds/-/blob/main/backgrounds/adwaita-d.jpg)
+ - [scenic view of
+ mountains](https://www.pexels.com/photo/scenic-view-of-mountains-during-dawn-1261728)
+ - [rms by marco novo](https://stallman.org/photos/rms/pages/2.html) -
+ [pixels](https://gitlab.gnome.org/GNOME/gnome-backgrounds/-/blob/main/backgrounds/pixels-l.webp)
+ - [linus
+ talking](https://en.wikipedia.org/wiki/File:Linus_Torvalds_talking.jpeg)
+ .
+ **If coming from v2, please check [v3 breaking changes](./docs/v3.md).**
+ .
+ ## Usage
+ ```
+ wallust run my_wallpaper.png
+ ```
+ _use `wallust -h` for an overview and `wallust --help` for a more detailed
+ explanation_
+ .
+ ## Docs
+ .
+ For ease of use you can check **detailed** docs with man pages (rather than
+ `cmd -h`ing everytime):
+ - `man wallust`, information about terminal colors and **template syntax**;
+ - `man wallust.5`, config docs;
+ - `man wallust-subcommand`, displays a man page for _subcommand_.
+ .
+ There is also a [**web page**](https://explosion-mental.codeberg.page/wallust)
+ for documentation! It's based on plain markdown, so you could also read it
+ locally at `docs/` directory.
+ .
+ [//]: # (ANCHOR: feats)
+ ## Features
+ - Includes [man pages](man/) and [completions](completions/)!
+ - Feature rich templating:
+     * You can use a [subset of
+ _Jinja2_](https://github.com/mitsuhiko/minijinja/blob/main/COMPATIBILITY.md)
+ (default).
+     * Alternatively, simply use the
+ [_pywal_](https://github.com/dylanaraps/pywal/wiki/User-Template-Files#available-variables-and-syntax)
+ syntax (requires selecting it on the config file).
+ - Sets terminal colors on all (or the current, `-u`) active terminals:
+     * Windows: Adds a
+       [color scheme for the windows
+ terminal](https://learn.microsoft.com/en-us/windows/terminal/customize-settings/color-schemes#creating-your-own-color-scheme)
+       by updating `settings.json` on Windows Terminal, to enable this scheme
+ for the first time you will have to selected it manually
+     * *NIX: ASCII escape sequences:
+         - `/dev/pts/` on Linux
+         - [`ps` to search active
+ terminals](https://github.com/dylanaraps/pywal/pull/510) on OpenBSD
+     * MacOS: iTerm2 sequences, `/dev/ttys00` on MacOS
+ - Cache scheme palettes, overwritten by `-w`:
+     * Linux: `$XDG_CACHE_HOME` or `$HOME/.cache`
+     * MacOs: `$HOME/Library/Caches`
+     * Windows: `{FOLDERID_LocalAppData}`
+ - Read pywal/terminal-sexy colorschemes with `wallust cs`.
+ - Built-in [themes](https://codeberg.org/explosion-mental/wallust-themes) with
+ ` wallust theme` (compile time feature).
+ - Configuration file at [`wallust.toml`](./wallust.toml) (but wallust can work
+ without one!):
+     * wallust checks for `~/.config/wallust/wallust.toml` for the config file,
+ if not found it will use default implementations.
+     * Configuration variables are avaliable as cli flags.
+   * Configurable methods for backends, colorspaces, palettes and threshold.
+     * OS dependant path:
+         - Linux: `$XDG_CONFIG_HOME` or `$HOME/.config`
+         - MacOs: `$HOME/Library/Application Support`
+         - Windows: `{FOLDERID_RoamingAppData}`
+ .
+ | Methods    | Description |
+ |------------|-------------|
+ | Backends   | How to extract the colors from the image. (e.g [pywal uses
+ convert](https://github.com/dylanaraps/pywal/blob/236aa48e741ff8d65c4c3826db2813bf2ee6f352/pywal/backends/wal.py#L14))
+ |
+ | ColorSpace | Get the most prominent color, and sort them according to the
+ `Palette`, configurable by a _threshold_ |
+ | Palette    | Makes a scheme palette with the gathered colors, (e.g. sets
+ light background) |
+ .
+ [//]: # (ANCHOR_END: feats)
+ .
+ # Installation
+ .
+ You can see if your distro has **wallust** in their repos by the following
+ chart. For detail information you can check some [distro installation
+ instruction](./docs/installation/distro.md)
+ that the maintainers have left.
+ .
+ [//]: # (ANCHOR: repology)
+ .
+ <a href="https://repology.org/project/wallust/versions">
+   <img align="right" width="192"
+ src="https://repology.org/badge/vertical-allrepos/wallust.svg">
+ </a>
+ .
+ [//]: # (ANCHOR_END: repology)
+ .
+ [//]: # (ANCHOR: installation-src)
+ .
+ ## With cargo
+ ```
+ cargo install wallust
+ ```
+ This will use the lastest (non pre-release) version.
+ .
+ ## With git
+ Simply `git clone https://codeberg.org/explosion-mental/wallust`.
+ .
+ Recommended way is to use the `Makefile`, since this will install man pages and
+ completions.
+ 1. Edit `Makefile` to meet your local setup (should be fine as is for most
+ linux distros).
+ 2. Build it with `make`
+ 3. Install wallust (if necessary as root): `make install`
+ .
+ Optionally, installing **only** the binary can be done with the following,
+ which moves the binary into your `$CARGO_HOME/bin`:
+ ```
+ cargo install --path .
+ ```
+ .
+ or build it and copy the binary to one folder present in your `$PATH` like
+ `/usr/local/bin`
+ ```
+ cargo build --release
+ cp -f ./target/release/wallust /usr/local/bin
+ ```
+ .
+ [//]: # (ANCHOR_END: installation-src)
+ .
+ # Background
+ I've started this tool mainly for _speed_ reasons given that I use a
+ [keybinding](https://codeberg.org/explosion-mental/demwm/src/commit/cd43bd6c16a90e32dc1c22ec499d9aaff497f04a/config.h#L346)
+ that [runs
+ pywal](https://codeberg.org/explosion-mental/demwm/src/commit/cd43bd6c16a90e32dc1c22ec499d9aaff497f04a/demwm_random_wall#L19)
+ with a random wallpaper image, this resulted in a noticeable delay in between,
+ which was really annoying as I changed my wallpaper.
+ .
+ Now I know that pywal uses image magick `convert` to gather the colors, which
+ caused the _slowness_ in pywal, since `convert` takes some time by itself to
+ gather the colors.
+ .
+ Wallust can also use `convert` with the `wal` backend, but it's even more
+ powerful since it brings up integrated native methods (no need for external
+ commands, like `convert`, but are nice if you have it), and even much more
+ sofisticated algorithms like `kmeans` or the SIMD backend `fast_resize`. This
+ made the need to let the user decide what fit best, and not hardcode one way of
+ reading the image.
+ .
+ While the goal was focused on speed, the use case move on to upgrade
+ functionality that both wallust and the _archived_ python tool shared.
+ .
+ I use rust given the great wide library (crates) that it offered and it's
+ native capabilities. I also tried [rewriting pywal in
+ C](https://github.com/explosion-mental/wast)
+ after watching a tsoding video where he implmements a histogram in C for
+ manipulating an image. That was the push I needed to start this journey on this
+ rusty color theoryish codebase.
+ .
+ .
+ # Related
+ - [wallust-themes - built in wallust
+ colorschemes](https://codeberg.org/explosion-mental/wallust-themes)
+ - [wallust-templates - some templates for known
+ programs](https://codeberg.org/explosion-mental/wallust-templates)
+ - [pywal - 🎨Generate and change color-schemes on the
+ fly](https://github.com/dylanaraps/pywal)
+ - [pywal16 - 16 colors fork of pywal](https://github.com/eylles/pywal16)
+ - [wpgtk - 🎴a colorscheme, wallpaper and template manager for
+ *nix](https://github.com/deviantfero/wpgtk)
+ - [wal-theme-picker - pick the best theme for the image (_rather than
+ generating one_)](https://github.com/drybalka/wal-theme-picker)
+ - [pigmnts - 🎨Color palette generator from an image using WebAssesmbly and
+ Rust](https://github.com/blenderskool/pigmnts)
+ - [Chameleon - 🦎Theme your linux system to match any
+ image](https://github.com/GideonWolfe/Chameleon)
+ - [lule_bash - Genretare all 255 colors from
+ wallpapers](https://github.com/warpwm/lule_bash)
+ - [lule - `lule_bash` rewriten for efficiency](https://github.com/warpwm/lule)
+ - [using vscode-wal-theme with
+ `wallust`](https://github.com/dlasagno/vscode-wal-theme/issues/23)
+ - [base16 - Framework for Tomorrow styled
+ themes](https://github.com/chriskempson/base16)
+ - [flavours -  🎨💧An easy to use base16 scheme manager that integrates
+ with any workflow](https://github.com/Misterio77/flavours)
+ - [oxidec - Eye-candy manager written in
+ Rust](https://github.com/mrtnvgr/oxidec)
+ - [raventhemer - A theme manager and switcher for desktop
+ linux](https://git.sr.ht/~nicohman/raven)
+ - [rose-pine _Issue #2_ - Ideas with using the whole 15 color
+ palette](https://github.com/rose-pine/xresources/issues/2)
+Homepage: https://explosion-mental.codeberg.page/wallust
+
+Package: yazi-cli
+Priority: optional
+Installed-Size: 1685
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 26.1.4-1
+Depends: libc6 (>= 2.39)
+Filename: pool/main/y/yazi-cli/yazi-cli_26.1.4-1_amd64.deb
+Size: 608632
+MD5sum: 4ecf84a43978a5d50928741ea6a52440
+SHA1: a6c09054a165b08f303cce46c0d8b9794e8d4a21
+SHA256: 1b3ee099eff006f43141c4b4cde97770ae1c57b98b207aa4e4873379c52054cb
+SHA512: 61bea752df76233933d948c00251ebf27271a5cdee9d361f703ff6478ff3e31f2f0a6521a47b1a3ffd20e0a8df090500cda95569c9bf4c984ef320a2b116384a
+Description: Yazi command-line interface
+ # yazi-cli
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-cli
+Priority: optional
+Installed-Size: 1699
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.9.15-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-cli/yazi-cli_25.9.15-1_amd64.deb
+Size: 621288
+MD5sum: b77a072fb0f6e2744c441094b8702e1b
+SHA1: 68e39f811ffee5c8309d5031d011a11ee308f003
+SHA256: cc8a3032b6749eebdb49d9810ead92ba292e87464d6eaa074963a4deb6d424ec
+SHA512: e3995cf6650564d4805a99dc23aaba63e41fd6eac3b79b582ba46c91ab8710442e0038d32e49383ed92148fa406e3618f8bd725581d6e2670ff0cbcf50bbfdce
+Description: Yazi command-line interface
+ # yazi-cli
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-fm
+Priority: optional
+Installed-Size: 22500
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 26.1.4-1
+Depends: libc6 (>= 2.39)
+Filename: pool/main/y/yazi-fm/yazi-fm_26.1.4-1_amd64.deb
+Size: 6456756
+MD5sum: 4c5cb6cd6400dac245ad3be0579cf569
+SHA1: 1b7d5a632a578bfb37a061bea3cd766f55b945c1
+SHA256: 019658d5cbd69bea73a6ef3f333f293742fbdbe65b8194cb669ae56465a95a25
+SHA512: 1c6cc64319987f80830c835ed9fdecc16229a7606e09e1045b3b4a9959ebdaa62eb3732258c54917eaab45fdd5c12cd3cfc291d06f7caf8056ac18db9d06d008
+Description: Yazi file manager
+ # yazi-fm
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
+Package: yazi-fm
+Priority: optional
+Installed-Size: 21462
+Maintainer: sxyazi <sxyazi@gmail.com>
+Architecture: amd64
+Version: 25.9.15-1
+Depends: libc6 (>= 2.34)
+Filename: pool/main/y/yazi-fm/yazi-fm_25.9.15-1_amd64.deb
+Size: 6164936
+MD5sum: de653bd9b54fe46ef1c135ff0b877f11
+SHA1: 83fb3e2eca7be6a86ebfe9aefb90c9ab840364ce
+SHA256: e832db263cb93de2a888793e1900be88d358676601385c40792c27245f257134
+SHA512: 78ec8a52bfa305c86af29afdfeb540e169ac23843489b7f67df9a118ff7decf786781ca6f995c5ea4fc7cedb6ca841896487b704f12c8209d64641d5659810b0
+Description: Yazi file manager
+ # yazi-fm
+ .
+ This crate is part of [Yazi][source], and it is not supposed to be used
+ outside, as there are no guarantees about the stability of its API.
+ .
+ [source]: https://github.com/sxyazi/yazi
+Homepage: https://yazi-rs.github.io
+
