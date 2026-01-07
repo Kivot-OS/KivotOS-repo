@@ -3,13 +3,13 @@ Priority: optional
 Section: utils
 Maintainer: KivotOS <maintainers@kivotos.local>
 Architecture: amd64
-Version: 0.0+git20260101-1
-Filename: pool/main/h/hellwal/hellwal_0.0+git20260101-1_amd64.deb
-Size: 91024
-MD5sum: 32bd0e15ac83864024f0246ae757f05f
-SHA1: 81e7bafc545def35d6c3f53877322c8dae9ba028
-SHA256: b5d86771a668d782fd0177f828995153efc8f50f29c5672d095ee2c850cdecdc
-SHA512: c0fa384383d17e76461eef52e3304aef9e4d6fd461bb578caf0171a2db3e527381a74d5c0f7b4bc593e7c04a1e62e4e12580a6aac1a57dbd15d4c7e128a855f3
+Version: 0.0+git20260107-1
+Filename: pool/main/h/hellwal/hellwal_0.0+git20260107-1_amd64.deb
+Size: 94936
+MD5sum: f1170b7a6ea9c50f6fc4823488aa8a32
+SHA1: d26380809cb49c0ee53b1e1a4a23224d76a16104
+SHA256: 2a309ccadfbabc5a49e42db5273bd08326c4cdfe688cf7fd40f6d70e8c301ad8
+SHA512: 879bbafda8dc8cff1fe187ba5ecd25fa0e1ee0abf75bbb208e7db8aadb8c54b37837f1e10095d4e12972adc482d24140a97aec8d2bd5f97dff5519db5707b187
 Description: Color palette generator (Pywal-like) written in C++
 Homepage: https://github.com/danihek/hellwal
 
@@ -34,13 +34,13 @@ Installed-Size: 7838
 Maintainer: explosion-mental
 Architecture: amd64
 Version: 3.4.0-1
-Depends: libc6 (>= 2.35)
+Depends: libc6 (>= 2.39)
 Filename: pool/main/w/wallust/wallust_3.4.0-1_amd64.deb
-Size: 2090432
-MD5sum: 9c43c94f2891976350180efc1e4a7a6a
-SHA1: 67342b587d88d8321b933f9c995b470ada2a40af
-SHA256: e954c9d9bb0eba46c6678a0aa7a0bd2c6ff710005fdfb3701a7aef3a479d3152
-SHA512: 9cb3ae4089898109f391378efbfa0e96f4412107f77d36319b11cea564547caa8008a433adba99c758afdc93a0b10345660b1a7bdaf89238507098508068dcc9
+Size: 2090752
+MD5sum: e91d375ed8a6c3bcfa4f4b304d66c1be
+SHA1: 0af3721c8d9105916ada4e8c6cf35434900ca49e
+SHA256: fc685293730d3d349a79d73446d6f26963f979a272f878bd64a7b8ba2771360a
+SHA512: 192e0cbe02b55af4f6c4503ec59d3cfbb80f52a755796a831892784248425de7bd993d569a4d348f7c9052ef6e224dd85adca3686e15cdcbb96dd7b357984294
 Description: Generate a 16 color scheme based on an image.
  # wallust - Generate colors from an image
  [//]: # (ANCHOR: badges)
@@ -253,17 +253,17 @@ Homepage: https://explosion-mental.codeberg.page/wallust
 
 Package: yazi-cli
 Priority: optional
-Installed-Size: 1684
+Installed-Size: 1685
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
-Version: 25.12.29-1
-Depends: libc6 (>= 2.34)
-Filename: pool/main/y/yazi-cli/yazi-cli_25.12.29-1_amd64.deb
-Size: 608184
-MD5sum: e782999de200019dd9f5a90bf72ef453
-SHA1: 5a8e4edacf08d848099cfdd1cfa29d597ee69986
-SHA256: 3f7c0af7e3f237370284a36d213e49d9086ddd9d69534c9df3019b8386355fc3
-SHA512: 24d9a7835d8e3f1a8f07155e2c0a27fca5b901fd26a1e54199061324988c0ee6b985324dac5f9fee79bcf8ea298fdd49eedd046eb862c60cd872db8c9cfd5922
+Version: 26.1.4-1
+Depends: libc6 (>= 2.39)
+Filename: pool/main/y/yazi-cli/yazi-cli_26.1.4-1_amd64.deb
+Size: 608632
+MD5sum: 4ecf84a43978a5d50928741ea6a52440
+SHA1: a6c09054a165b08f303cce46c0d8b9794e8d4a21
+SHA256: 1b3ee099eff006f43141c4b4cde97770ae1c57b98b207aa4e4873379c52054cb
+SHA512: 61bea752df76233933d948c00251ebf27271a5cdee9d361f703ff6478ff3e31f2f0a6521a47b1a3ffd20e0a8df090500cda95569c9bf4c984ef320a2b116384a
 Description: Yazi command-line interface
  # yazi-cli
  .
@@ -297,17 +297,17 @@ Homepage: https://yazi-rs.github.io
 
 Package: yazi-fm
 Priority: optional
-Installed-Size: 21943
+Installed-Size: 22500
 Maintainer: sxyazi <sxyazi@gmail.com>
 Architecture: amd64
-Version: 25.12.29-1
-Depends: libc6 (>= 2.34)
-Filename: pool/main/y/yazi-fm/yazi-fm_25.12.29-1_amd64.deb
-Size: 6267408
-MD5sum: 5e08c5423fda9042e1808025509f904b
-SHA1: 77aa28a17d139be8d9f70d35cfd41f427d05b7c5
-SHA256: 197bf1039d46c2202685665932605ef85c6f42c9901ec593667a6ea6d8f55c7f
-SHA512: 913b2032bb5a0e674c4a9219c41a1579846dc5dd65ce599e98ad570dbb3cd0d10a777cfb2daaca72ab1ceff7c4cba297e2275a317d87a0832ff429cf0cc17fb2
+Version: 26.1.4-1
+Depends: libc6 (>= 2.39)
+Filename: pool/main/y/yazi-fm/yazi-fm_26.1.4-1_amd64.deb
+Size: 6456756
+MD5sum: 4c5cb6cd6400dac245ad3be0579cf569
+SHA1: 1b7d5a632a578bfb37a061bea3cd766f55b945c1
+SHA256: 019658d5cbd69bea73a6ef3f333f293742fbdbe65b8194cb669ae56465a95a25
+SHA512: 1c6cc64319987f80830c835ed9fdecc16229a7606e09e1045b3b4a9959ebdaa62eb3732258c54917eaab45fdd5c12cd3cfc291d06f7caf8056ac18db9d06d008
 Description: Yazi file manager
  # yazi-fm
  .
