@@ -11,10 +11,10 @@
   "packages": [
     {
       "name": "yazi",
-      "type": "cargo",
+      "type": "custom",
+      "script": "./scripts/build.sh x86_64-unknown-linux-gnu",
       "source": "github.com",
       "repo": "sxyazi/yazi",
-      "crates": ["yazi-fm", "yazi-cli"],
       "description": "Blazing fast TUI file manager",
       "homepage": "https://github.com/sxyazi/yazi",
       "license": "MIT",

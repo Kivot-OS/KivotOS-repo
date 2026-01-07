@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'packages.json'
-      - '.github/workflows/apt-packages.yml'
+      - "packages.json"
+      - ".github/workflows/apt-packages.yml"
   schedule:
     - cron: "0 3 1 * *"
 
@@ -24,13 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.read.outputs.packages }}
-      distros:  ${{ steps.read.outputs.distros }}
+      distros: ${{ steps.read.outputs.distros }}
     steps:
       - uses: actions/checkout@v4
       - id: read
         run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
           set -euo pipefail
-          if [ ! -f packages.json ]; then
             echo '{"distros":["trixie"],"packages":[]}' > packages.json
           fi
           echo "packages=$(jq -c '.packages' packages.json)" >> "$GITHUB_OUTPUT"
@@ -129,6 +130,32 @@ jobs:
                 | grep -E "${{ matrix.pattern }}" \
                 | while read -r URL; do FN=$(basename "$URL"); curl -L "$URL" -o "$ART/$FN"; done
               ;;
+
+            custom)
+              echo "📜 Running repo's build script: ${{ matrix.script }}"
+              git clone --depth=1 "$CLONE_URL" src
+              pushd src
+              
+              # Extract script path and arguments
+              SCRIPT_CMD="${{ matrix.script }}"
+              SCRIPT_PATH=$(echo "$SCRIPT_CMD" | awk '{print $1}')
+              SCRIPT_ARGS=$(echo "$SCRIPT_CMD" | cut -d' ' -f2-)
+              
+              chmod +x "$SCRIPT_PATH"
+              ./$SCRIPT_PATH $SCRIPT_ARGS
+              
+              # Find and move generated .deb files
+              find . -name "*.deb" -exec mv {} "$ART/" \;
+              
+              popd
+              ;;
+
+            script)
+              echo "📜 Running local build script: ${{ matrix.script }}"
+              chmod +x "${GITHUB_WORKSPACE}/${{ matrix.script }}"
+              "${GITHUB_WORKSPACE}/${{ matrix.script }}"
+              ;;
+
             *) echo "Unknown type: ${TYPE}"; exit 1;;
           esac
 
@@ -175,7 +202,7 @@ jobs:
           DISTROS: ${{ needs.matrix.outputs.distros }}
           COMPONENT: ${{ env.COMPONENT }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE:  ${{ secrets.GPG_PASSPHRASE }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
           DISTROS_RAW="${{ needs.matrix.outputs.distros }}"
