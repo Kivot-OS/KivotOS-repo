@@ -21,7 +21,7 @@ env:
 
 jobs:
   matrix:
-    runs-on: debian
+    runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.read.outputs.packages }}
       distros:  ${{ steps.read.outputs.distros }}
@@ -29,8 +29,6 @@ jobs:
       - uses: actions/checkout@v4
       - id: read
         run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
           set -euo pipefail
           if [ ! -f packages.json ]; then
             echo '{"distros":["trixie"],"packages":[]}' > packages.json
@@ -41,7 +39,7 @@ jobs:
   build:
     name: build ${{ matrix.name }}
     needs: matrix
-    runs-on: debian
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -146,7 +144,7 @@ jobs:
   publish:
     name: publish to apt
     needs: [matrix, build]
-    runs-on: debian
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
