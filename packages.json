@@ -3,7 +3,7 @@
   "repository": {
     "name": "KivotOS",
     "description": "KivotOS APT Repository - Binary packages with automated CI/CD",
-    "homepage": "https://dungdinhmanh.github.io/KivotOS-repo/",
+    "homepage": "https://kivot-os.github.io/KivotOS-repo/",
     "source_packages": true,
     "binary_releases": true,
     "last_updated": "2025-10-25T15:30:00Z"
