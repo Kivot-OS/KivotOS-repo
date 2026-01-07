@@ -21,7 +21,7 @@ env:
 
 jobs:
   matrix:
-    runs-on: ubuntu-latest
+    runs-on: debian
     outputs:
       packages: ${{ steps.read.outputs.packages }}
       distros:  ${{ steps.read.outputs.distros }}
@@ -39,7 +39,7 @@ jobs:
   build:
     name: build ${{ matrix.name }}
     needs: matrix
-    runs-on: ubuntu-22.04
+    runs-on: debian
     strategy:
       fail-fast: false
       matrix:
@@ -144,7 +144,7 @@ jobs:
   publish:
     name: publish to apt
     needs: [matrix, build]
-    runs-on: ubuntu-22.04
+    runs-on: debian
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
@@ -186,7 +186,8 @@ jobs:
             DISTROS="$DISTROS_RAW"
           fi
           echo "DISTROS=${DISTROS}"
-          rm -rf dists pool *.gpg Release* InRelease
+          rm -rf public
+          mkdir public
           cat > ~/.aptly.conf <<'JSON'
           {
             "rootDir": ".aptly",
@@ -223,7 +224,7 @@ jobs:
           done
           if [ -d ".aptly/public" ]; then
             echo "Copying .aptly/public -> repo root"
-            cp -a .aptly/public/* . || true
+            cp -a .aptly/public/* ./public || true
           fi
           echo "Produced files:"
           ls -la dists || true
