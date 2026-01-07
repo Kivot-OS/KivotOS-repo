@@ -2,6 +2,8 @@ name: apt-packages
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "packages.json"
       - ".github/workflows/apt-packages.yml"
@@ -196,6 +198,7 @@ jobs:
   publish:
     name: publish to apt
     needs: [matrix, build]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
