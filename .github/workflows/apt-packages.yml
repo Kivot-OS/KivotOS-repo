@@ -29,6 +29,8 @@ jobs:
       - uses: actions/checkout@v4
       - id: read
         run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
           set -euo pipefail
           if [ ! -f packages.json ]; then
             echo '{"distros":["trixie"],"packages":[]}' > packages.json
@@ -39,7 +41,7 @@ jobs:
   build:
     name: build ${{ matrix.name }}
     needs: matrix
-    runs-on: ubuntu-latest
+    runs-on: debian
     strategy:
       fail-fast: false
       matrix:
