@@ -323,4 +323,4 @@ jobs:
           force_orphan: false # Giữ lại lịch sử các gói cũ
           user_name: "github-actions[bot]"
           user_email: "github-actions[bot]@users.noreply.github.com"
-          commit_message: "🚀 Update APT repository [$(date -u +%Y-%m-%d)]"
+          commit_message: "🚀 Update APT repository [${{ steps.timestamp.outputs.date }}]"
