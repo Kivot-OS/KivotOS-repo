@@ -313,7 +313,11 @@ jobs:
           }
           export -f generate_index
           find repo-public -type d -exec bash -c 'generate_index "$0"' {} \;
-
+      - name: Generate timestamp for commit
+        id: timestamp
+        run: |
+          echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "datetime=$(date -u '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
       - name: Deploy to GitHub Pages 🚀
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -323,4 +327,4 @@ jobs:
           force_orphan: false # Giữ lại lịch sử các gói cũ
           user_name: "github-actions[bot]"
           user_email: "github-actions[bot]@users.noreply.github.com"
-          commit_message: "🚀 Update APT repository [${{ steps.timestamp.outputs.date }}]"
+          commit_message: "🚀 Update APT repository [${{ steps.timestamp.outputs.datetime }}]"
