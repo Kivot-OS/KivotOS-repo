@@ -1,0 +1,241 @@
+name: Build Packages
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "packages/**.toml"
+      - "packages.lock"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Generate Matrix
+        id: set-matrix
+        run: |
+          pip install toml requests
+          MATRIX=$(python scripts/manager.py matrix)
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  build:
+    needs: matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git jq curl
+          
+          # Custom dependency installation logic
+          # In a real scenario, parse ${{ matrix.depends.build }} list
+          # Here we install some common ones
+          if [[ "${{ matrix.type }}" == "cargo" ]]; then
+             sudo apt-get install -y cargo rustc
+          fi
+          
+      - name: Build Package
+        env:
+          APP_VERSION: ${{ matrix.version }}
+        run: |
+          # Create build directory
+          mkdir -p build
+          
+          # Run build command
+          echo "Building ${{ matrix.name }} version ${{ matrix.version }}"...
+          
+          if [[ "${{ matrix.type }}" == "custom" ]]; then
+             chmod +x ${{ matrix.build_cmd }}
+             ${{ matrix.build_cmd }}
+          elif [[ "${{ matrix.type }}" == "cargo" ]]; then
+             git clone https://${{ matrix.repo }} src
+             cd src
+             git checkout ${{ matrix.version }}
+             ${{ matrix.build_cmd }}
+             cd ..
+          elif [[ "${{ matrix.type }}" == "cargo-deb" ]]; then
+             git clone https://${{ matrix.repo }} src
+             cd src
+             git checkout ${{ matrix.version }}
+             cargo install cargo-deb
+             cargo deb
+             cd ..
+          elif [[ "${{ matrix.type }}" == "make" ]]; then
+             git clone https://${{ matrix.repo }} src
+             cd src
+             git checkout ${{ matrix.version }}
+             ${{ matrix.build_cmd }}
+             cd ..
+          fi
+          
+      - name: Package .deb
+        if: matrix.type != 'custom' && matrix.type != 'cargo-deb'
+        run: |
+          PKG_NAME="${{ matrix.name }}"
+          VERSION="${{ matrix.version }}"
+          # Remove 'v' from version for debian compliance
+          DEB_VER="${VERSION#v}"
+          ARCH="amd64"
+          
+          # Create debian structure
+          mkdir -p pkg/DEBIAN
+          
+          # Install files based on JSON mapping
+          # We need to parse the JSON object 'install'
+          # Since it's passed as a string in matrix, we can access it via context or parse it
+          
+          # Helper function to install files
+          # Note: Github Actions matrix objects are available as JSON
+          
+          echo '${{ toJson(matrix.install) }}' > install_map.json
+          
+          jq -r 'to_entries[] | "\(.key) \(.value)"' install_map.json | while read -r SRC DST;
+          do
+             # Resolve SRC relative to build context
+             # If type is cargo/make, SRC might be in src/
+             
+             if [[ -f "src/$SRC" ]]; then
+                REAL_SRC="src/$SRC"
+             elif [[ -f "$SRC" ]]; then
+                REAL_SRC="$SRC"
+             else
+                echo "Warning: Source file $SRC not found"
+                continue
+             fi
+             
+             DEST_DIR="pkg$(dirname "$DST")"
+             mkdir -p "$DEST_DIR"
+             cp "$REAL_SRC" "pkg$DST"
+             # Set permissions based on file type
+             if [[ "$DST" == */bin/* ]] || [[ "$DST" == *completions* ]]; then
+                chmod 755 "pkg$DST"
+             else
+                chmod 644 "pkg$DST"
+             fi
+          done
+          
+          # Parse control from matrix
+          MAINTAINER=$(echo '${{ toJson(matrix.control) }}' | jq -r '.maintainer // "KivotOS <kivotos@example.com>"')
+          SECTION=$(echo '${{ toJson(matrix.control) }}' | jq -r '.section // "utils"')
+          PRIORITY=$(echo '${{ toJson(matrix.control) }}' | jq -r '.priority // "optional"')
+          HOMEPAGE=$(echo '${{ toJson(matrix.control) }}' | jq -r '.homepage // ""')
+          RUNTIME_DEPS=$(echo '${{ toJson(matrix.depends) }}' | jq -r '.runtime | join(", ") // ""')
+          
+          # Create control file
+          # Build control file content
+          CONTROL="Package: $PKG_NAME\n"
+          CONTROL+="Version: $DEB_VER\n"
+          CONTROL+="Architecture: $ARCH\n"
+          CONTROL+="Maintainer: $MAINTAINER\n"
+          CONTROL+="Description: ${{ matrix.description }}\n"
+          CONTROL+="Priority: $PRIORITY\n"
+          CONTROL+="Section: $SECTION\n"
+          if [ -n "$HOMEPAGE" ]; then
+            CONTROL+="Homepage: $HOMEPAGE\n"
+          fi
+          if [ -n "$RUNTIME_DEPS" ]; then
+            CONTROL+="Depends: $RUNTIME_DEPS\n"
+          fi
+          echo -e "$CONTROL" > pkg/DEBIAN/control
+          
+          # Build .deb
+          mkdir -p dist
+          dpkg-deb --build pkg "dist/${PKG_NAME}_${DEB_VER}_${ARCH}.deb"
+          
+      - name: Find custom .deb
+        if: matrix.type == 'custom' || matrix.type == 'cargo-deb'
+        run: |
+          # Custom build script or cargo-deb should create .deb
+          mkdir -p dist
+          # Check src/target/debian/ (cargo-deb output)
+          if ls src/target/debian/*.deb 1> /dev/null 2>&1; then
+            cp src/target/debian/*.deb dist/
+          fi
+          # Check src/ root (yazi build.sh output)
+          if ls src/*.deb 1> /dev/null 2>&1; then
+            cp src/*.deb dist/
+          fi
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.name }}
+          path: dist/*.deb
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: deb-*
+          path: all-debs
+          merge-multiple: true
+          
+      - name: Setup Aptly
+        run: sudo apt-get install -y aptly
+        
+      - name: Import GPG Key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          
+      - name: Publish Repo
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Initialize Repo
+          aptly repo create -distribution=trixie -component=main kivotos
+          
+          # Add packages
+          find all-debs -name "*.deb" -exec aptly repo add kivotos {} +
+          
+          # Publish
+          # Note: We use a local filesystem publish then upload to GH Pages
+          mkdir -p public
+          
+          # Get Key ID (first secret key)
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d/ -f2 | head -n1)
+          
+          aptly publish repo \
+            -architectures=amd64 \
+            -gpg-key="$KEY_ID" \
+            -passphrase="$GPG_PASSPHRASE" \
+            kivotos \
+            filesystem:public:
+            
+          # Add public key
+          gpg --export --armor "$KEY_ID" > public/pubkey.gpg
+          
+          # Generate simple index
+          cd public
+          # (Simple index generation logic here if needed, aptly does some)
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          force_orphan: true

@@ -1,0 +1,26 @@
+name = "hellwal"
+repo = "github:danihek/hellwal"
+version = "latest"
+type = "make"
+build = "make"
+binary = "hellwal"
+description = "Color palette generator (Pywal-like) written in C++"
+license = "MIT"
+homepage = "https://github.com/danihek/hellwal"
+
+[depends]
+build = ["build-essential", "git", "g++"]
+runtime = []
+
+[distro]
+codenames = ["trixie"]
+arch = "amd64"
+
+[control]
+maintainer = "Dinh Manh Dung <dungdinhmanh0209@gmail.com>"
+section = "utils"
+priority = "optional"
+homepage = "https://github.com/danihek/hellwal"
+
+[install]
+"hellwal" = "/usr/bin/hellwal"

@@ -1,0 +1,25 @@
+name = "matugen"
+repo = "github:InioX/matugen"
+version = "latest"
+type = "cargo-deb"
+binary = "matugen"
+description = "Material You color generation tool"
+license = "GPL-2.0"
+homepage = "https://github.com/InioX/matugen"
+
+[depends]
+build = ["rustc", "cargo", "git", "pkg-config"]
+runtime = []
+
+[distro]
+codenames = ["trixie"]
+arch = "amd64"
+
+[control]
+maintainer = "Dinh Manh Dung <dungdinhmanh0209@gmail.com>"
+section = "utils"
+priority = "optional"
+homepage = "https://github.com/InioX/matugen"
+
+[install]
+"target/release/matugen" = "/usr/bin/matugen"
