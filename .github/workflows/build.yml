@@ -218,15 +218,15 @@ jobs:
       - name: Configure GPG
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
-          echo 'pinentry-mode loopback' > ~/.gnupg/gpg.conf
-          echo 'allow-loopback-pinentry' > ~/.gnupg/gpg-agent.conf
-          gpgconf --kill gpg-agent 2>/dev/null || true
+          printf 'pinentry-mode loopback\nbatch\n' > ~/.gnupg/gpg.conf
+          printf 'allow-loopback-pinentry\n' > ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
 
       - name: Import GPG Key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
           
       - name: Publish Repo
         env:
