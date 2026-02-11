@@ -43,21 +43,6 @@ sudo apt install yazi hellwal wallust matugen
 
 ---
 
-## 🔧 Package Details
-
-### Yazi
-
-Terminal file manager with optional dependencies for enhanced functionality:
-
-```bash
-# Optional dependencies for full features
-sudo apt install ffmpeg 7zip jq poppler-utils fd-find ripgrep fzf zoxide imagemagick
-```
-
-**Recommended:** Yazi works best with these optional tools installed.
-
----
-
 ## 🛠️ Troubleshooting
 
 ### Reset apt lists

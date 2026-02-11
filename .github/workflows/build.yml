@@ -62,26 +62,45 @@ jobs:
           # Run build command
           echo "Building ${{ matrix.name }} version ${{ matrix.version }}"...
           
+          # Convert repo shorthand to full URL
+          REPO_URL="${{ matrix.repo }}"
+          if [[ "$REPO_URL" == github:* ]]; then
+             REPO_URL="https://github.com/${REPO_URL#github:}"
+          elif [[ "$REPO_URL" == codeberg:* ]]; then
+             REPO_URL="https://codeberg.org/${REPO_URL#codeberg:}"
+          fi
+          
           if [[ "${{ matrix.type }}" == "custom" ]]; then
-             chmod +x ${{ matrix.build_cmd }}
-             ${{ matrix.build_cmd }}
-          elif [[ "${{ matrix.type }}" == "cargo" ]]; then
-             git clone https://${{ matrix.repo }} src
+             git clone "$REPO_URL" src
              cd src
-             git checkout ${{ matrix.version }}
+             if [[ "${{ matrix.version }}" != "latest" ]]; then
+               git checkout ${{ matrix.version }}
+             fi
+             ${{ matrix.build_cmd }}
+             cd ..
+          elif [[ "${{ matrix.type }}" == "cargo" ]]; then
+             git clone "$REPO_URL" src
+             cd src
+             if [[ "${{ matrix.version }}" != "latest" ]]; then
+               git checkout ${{ matrix.version }}
+             fi
              ${{ matrix.build_cmd }}
              cd ..
           elif [[ "${{ matrix.type }}" == "cargo-deb" ]]; then
-             git clone https://${{ matrix.repo }} src
+             git clone "$REPO_URL" src
              cd src
-             git checkout ${{ matrix.version }}
+             if [[ "${{ matrix.version }}" != "latest" ]]; then
+               git checkout ${{ matrix.version }}
+             fi
              cargo install cargo-deb
              cargo deb
              cd ..
           elif [[ "${{ matrix.type }}" == "make" ]]; then
-             git clone https://${{ matrix.repo }} src
+             git clone "$REPO_URL" src
              cd src
-             git checkout ${{ matrix.version }}
+             if [[ "${{ matrix.version }}" != "latest" ]]; then
+               git checkout ${{ matrix.version }}
+             fi
              ${{ matrix.build_cmd }}
              cd ..
           fi
