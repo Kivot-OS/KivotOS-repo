@@ -225,19 +225,31 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          # Create aptly config
+          mkdir -p ~/.aptly public
+          cat > ~/.aptly.conf <<'JSON'
+          {
+            "rootDir": ".aptly",
+            "downloadConcurrency": 4,
+            "FileSystemPublishEndpoints": {
+              "public": {
+                "rootDir": "./public",
+                "linkMethod": "copy"
+              }
+            }
+          }
+          JSON
+          
           # Initialize Repo
           aptly repo create -distribution=trixie -component=main kivotos
           
           # Add packages
           find all-debs -name "*.deb" -exec aptly repo add kivotos {} +
           
-          # Publish
-          # Note: We use a local filesystem publish then upload to GH Pages
-          mkdir -p public
-          
           # Get Key ID (first secret key)
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d/ -f2 | head -n1)
           
+          # Publish to filesystem
           aptly publish repo \
             -architectures=amd64 \
             -gpg-key="$KEY_ID" \
@@ -247,10 +259,6 @@ jobs:
             
           # Add public key
           gpg --export --armor "$KEY_ID" > public/pubkey.gpg
-          
-          # Generate simple index
-          cd public
-          # (Simple index generation logic here if needed, aptly does some)
           
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
