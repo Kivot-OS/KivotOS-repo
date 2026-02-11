@@ -98,6 +98,9 @@ jobs:
              if [[ "${{ matrix.version }}" != "latest" ]]; then
                git checkout ${{ matrix.version }}
              fi
+             # Ensure rustup cargo is in PATH
+             source $HOME/.cargo/env 2>/dev/null || true
+             export PATH="$HOME/.cargo/bin:$PATH"
              ${{ matrix.build_cmd }}
              cd ..
           fi
