@@ -74,6 +74,10 @@ jobs:
                git checkout ${{ matrix.version }}
              fi
              ${{ matrix.build_cmd }}
+             # Run post-build if defined (e.g., extract from zip)
+             if [ -n "${{ matrix.post_build }}" ]; then
+               ${{ matrix.post_build }}
+             fi
              cd ..
           elif [[ "${{ matrix.type }}" == "cargo" ]]; then
              git clone "$REPO_URL" src
@@ -191,6 +195,64 @@ jobs:
           # Check src/ root (yazi build.sh output)
           if ls src/*.deb 1> /dev/null 2>&1; then
             cp src/*.deb dist/
+          fi
+          
+      - name: Package custom build to .deb
+        if: matrix.type == 'custom' && !cancelled()
+        run: |
+          # If no .deb found, create one from built binaries
+          if [ ! -f dist/*.deb ]; then
+            echo "No .deb found, creating package from built binaries..."
+            PKG_NAME="${{ matrix.name }}"
+            VERSION="${{ matrix.version }}"
+            DEB_VER="${VERSION#v}"
+            ARCH="amd64"
+            
+            mkdir -p pkg/DEBIAN
+            
+            # Parse install mappings from matrix
+            echo '${{ toJson(matrix.install) }}' > install_map.json
+            jq -r 'to_entries[] | "\(.key) \(.value)"' install_map.json | while read -r SRC DST;
+            do
+               if [[ -f "src/$SRC" ]]; then
+                  REAL_SRC="src/$SRC"
+               elif [[ -f "$SRC" ]]; then
+                  REAL_SRC="$SRC"
+               else
+                  echo "Warning: Source file $SRC not found"
+                  continue
+               fi
+               
+               DEST_DIR="pkg$(dirname "$DST")"
+               mkdir -p "$DEST_DIR"
+               cp "$REAL_SRC" "pkg$DST"
+               if [[ "$DST" == */bin/* ]] || [[ "$DST" == *completions* ]]; then
+                  chmod 755 "pkg$DST"
+               else
+                  chmod 644 "pkg$DST"
+               fi
+            done
+            
+            # Parse control fields
+            MAINTAINER=$(echo '${{ toJson(matrix.control) }}' | jq -r '.maintainer // "KivotOS <kivotos@example.com>"')
+            SECTION=$(echo '${{ toJson(matrix.control) }}' | jq -r '.section // "utils"')
+            PRIORITY=$(echo '${{ toJson(matrix.control) }}' | jq -r '.priority // "optional"')
+            HOMEPAGE=$(echo '${{ toJson(matrix.control) }}' | jq -r '.homepage // ""')
+            
+            CONTROL="Package: $PKG_NAME\n"
+            CONTROL+="Version: $DEB_VER\n"
+            CONTROL+="Architecture: $ARCH\n"
+            CONTROL+="Maintainer: $MAINTAINER\n"
+            CONTROL+="Description: ${{ matrix.description }}\n"
+            CONTROL+="Priority: $PRIORITY\n"
+            CONTROL+="Section: $SECTION\n"
+            if [ -n "$HOMEPAGE" ]; then
+              CONTROL+="Homepage: $HOMEPAGE\n"
+            fi
+            echo -e "$CONTROL" > pkg/DEBIAN/control
+            
+            mkdir -p dist
+            dpkg-deb --build pkg "dist/${PKG_NAME}_${DEB_VER}_${ARCH}.deb"
           fi
           
       - uses: actions/upload-artifact@v4
