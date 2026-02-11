@@ -45,10 +45,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential git jq curl
           
-          # Custom dependency installation logic
-          # In a real scenario, parse ${{ matrix.depends.build }} list
-          # Here we install some common ones
-          if [[ "${{ matrix.type }}" == "cargo" ]]; then
+          # Install Rust toolchain for cargo, cargo-deb, and make types
+          # (make may use cargo internally, e.g., wallust)
+          if [[ "${{ matrix.type }}" == "cargo" ]] || [[ "${{ matrix.type }}" == "cargo-deb" ]] || [[ "${{ matrix.type }}" == "make" ]]; then
              sudo apt-get install -y cargo rustc
           fi
           
