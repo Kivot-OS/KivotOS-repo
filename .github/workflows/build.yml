@@ -46,7 +46,7 @@ jobs:
           sudo apt-get install -y build-essential git jq curl
 
       - name: Setup Rust toolchain
-        if: matrix.type == 'cargo' || matrix.type == 'cargo-deb' || matrix.type == 'make'
+        if: matrix.type == 'cargo' || matrix.type == 'make'
         uses: dtolnay/rust-toolchain@stable
           
       - name: Build Package
@@ -80,22 +80,19 @@ jobs:
              fi
              cd ..
           elif [[ "${{ matrix.type }}" == "cargo" ]]; then
-             git clone "$REPO_URL" src
-             cd src
-             if [[ "${{ matrix.version }}" != "latest" ]]; then
-               git checkout ${{ matrix.version }}
-             fi
-             ${{ matrix.build_cmd }}
-             cd ..
-          elif [[ "${{ matrix.type }}" == "cargo-deb" ]]; then
-             git clone "$REPO_URL" src
-             cd src
-             if [[ "${{ matrix.version }}" != "latest" ]]; then
-               git checkout ${{ matrix.version }}
-             fi
-             cargo install cargo-deb
-             cargo deb
-             cd ..
+            git clone "$REPO_URL" src
+            cd src
+            if [[ "${{ matrix.version }}" != "latest" ]]; then
+              git checkout ${{ matrix.version }}
+            fi
+            # Try cargo-deb first (if project supports it), fallback to cargo build
+            if cargo install cargo-deb 2>/dev/null && cargo deb 2>/dev/null; then
+              echo "Successfully built with cargo-deb"
+            else
+              echo "Falling back to cargo build"
+              cargo build --release
+            fi
+            cd ..
           elif [[ "${{ matrix.type }}" == "make" ]]; then
              git clone "$REPO_URL" src
              cd src
@@ -110,7 +107,7 @@ jobs:
           fi
           
       - name: Package .deb
-        if: matrix.type != 'custom' && matrix.type != 'cargo-deb'
+        if: matrix.type != 'custom'
         run: |
           PKG_NAME="${{ matrix.name }}"
           VERSION="${{ matrix.version }}"
@@ -184,7 +181,7 @@ jobs:
           dpkg-deb --build pkg "dist/${PKG_NAME}_${DEB_VER}_${ARCH}.deb"
           
       - name: Find custom .deb
-        if: matrix.type == 'custom' || matrix.type == 'cargo-deb'
+        if: matrix.type == 'custom'
         run: |
           # Custom build script or cargo-deb should create .deb
           mkdir -p dist

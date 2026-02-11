@@ -1,7 +1,7 @@
 name = "matugen"
 repo = "github:InioX/matugen"
 version = "latest"
-type = "cargo-deb"
+type = "cargo"
 binary = "matugen"
 description = "Material You color generation tool"
 license = "GPL-2.0"
