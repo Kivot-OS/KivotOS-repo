@@ -260,6 +260,33 @@ jobs:
           # Add public key
           gpg --export --armor "$KEY_ID" > public/pubkey.gpg
           
+          # Generate directory index HTML for browsing
+          echo "Generating directory indexes..."
+          generate_index() {
+            local dir=$1
+            pushd "$dir" > /dev/null
+            local title="Index of ${dir#public}"
+            {
+              echo "<!DOCTYPE html><html><head><title>$title</title><style>"
+              echo "body{font-family:monospace;background:#fff;color:#000;margin:2em;}"
+              echo "hr{border:0;border-top:1px solid #ccc;}"
+              echo "a{text-decoration:none;color:#00e;}"
+              echo "a:hover{text-decoration:underline;}"
+              echo "</style></head><body>"
+              echo "<h1>$title</h1><hr><pre>"
+              echo "<a href='../'>../</a>"
+              ls -1p | grep -v "index.html" | while read -r line; do
+                local mtime=$(stat -c '%y' "$line" 2>/dev/null | cut -d'.' -f1 | tr ' ' '_' || echo "-$(date '+%Y-%m-%d_%H:%M')")
+                local size=$(du -sh "$line" 2>/dev/null | cut -f1 || echo "-")
+                printf "<a href='%s'>%-50s</a> %20s %10s\\n" "$line" "$line" "$mtime" "$size"
+              done
+              echo "</pre><hr></body></html>"
+            } > index.html
+            popd > /dev/null
+          }
+          export -f generate_index
+          find public -type d -exec bash -c 'generate_index "$0"' {} \;
+          
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
