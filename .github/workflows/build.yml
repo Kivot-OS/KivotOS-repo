@@ -52,6 +52,7 @@ jobs:
       - name: Build Package
         env:
           APP_VERSION: ${{ matrix.version }}
+          POST_BUILD: ${{ matrix.post_build }}
         run: |
           # Create build directory
           mkdir -p build
@@ -75,8 +76,9 @@ jobs:
              fi
              ${{ matrix.build_cmd }}
              # Run post-build if defined (e.g., extract from zip)
-             if [ -n "${{ matrix.post_build }}" ]; then
-               ${{ matrix.post_build }}
+             if [ -n "$POST_BUILD" ]; then
+               echo "Running post-build command..."
+               eval "$POST_BUILD"
              fi
              cd ..
           elif [[ "${{ matrix.type }}" == "cargo" ]]; then
