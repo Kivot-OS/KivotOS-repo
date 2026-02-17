@@ -78,7 +78,7 @@ meson setup build \
     --prefix="$LOCAL_PREFIX" \
     --buildtype=release \
     -Dbackends=drm,libinput \
-    -Drenderers=gles2,vulkan \
+    -Drenderers=gles2 \
     -Dexamples=false \
     -Dxwayland=enabled
 
