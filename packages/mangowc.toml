@@ -19,6 +19,7 @@ build = [
     "libffi-dev",
     "libegl-dev",
     "libgles2-mesa-dev",
+    "libgbm-dev",
     "libwayland-dev",
     "wayland-protocols",
     "libinput-dev",
