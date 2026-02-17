@@ -1,6 +1,6 @@
 name = "mangowc"
 repo = "github:DreamMaoMao/mangowc"
-version = "latest"
+version = "0.12.2"
 type = "custom"
 build = "bash ../scripts/build-mangowc.sh"
 binary = "mangowc"
@@ -14,6 +14,9 @@ build = [
     "meson",
     "ninja-build",
     "pkg-config",
+    "cmake",
+    "libxml2-dev",
+    "libffi-dev",
     "libwayland-dev",
     "wayland-protocols",
     "libinput-dev",
