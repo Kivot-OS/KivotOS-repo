@@ -116,6 +116,16 @@ jobs:
              export PATH="$HOME/.cargo/bin:$PATH"
              ${{ matrix.build_cmd }}
              cd ..
+          elif [[ "${{ matrix.type }}" == "ninja" ]]; then
+             git clone "$REPO_URL" src
+             cd src
+             if [[ "${{ matrix.version }}" != "latest" ]]; then
+               git checkout ${{ matrix.version }}
+             fi
+             # Meson/Ninja build
+             meson setup build --prefix=/usr --buildtype=release
+             ninja -C build
+             cd ..
           fi
           
       - name: Package .deb

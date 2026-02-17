@@ -2,10 +2,7 @@ name = "mangowc"
 repo = "github:DreamMaoMao/mangowc"
 version = "latest"
 type = "custom"
-# Pinned dependency versions - update manually after testing
-wlroots_version = "0.19.2"
-scenefx_version = "0.4.1"
-build = "WLROOTS_VER=0.19.2 SCENEFX_VER=0.4.1 bash ../scripts/build-mangowc.sh"
+build = "bash ../scripts/build-mangowc.sh"
 binary = "mangowc"
 description = "A Wayland compositor based on wlroots and scenefx (dwm but wayland)"
 license = "MIT"
@@ -33,10 +30,7 @@ build = [
     "libxcb-composite0-dev",
     "libxcb-icccm4-dev",
     "libxcb-res0-dev",
-    "libc6-dev",
-    "libavutil-dev",
-    "libavcodec-dev",
-    "libavformat-dev"
+    "libc6-dev"
 ]
 runtime = [
     "libwayland-client0",

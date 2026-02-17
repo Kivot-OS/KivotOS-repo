@@ -1,25 +1,15 @@
 #!/bin/bash
 set -e
 
-# Use pinned versions from environment variables (set in mangowc.toml)
-# This ensures reproducible builds - update versions manually after testing
+# Pinned dependency versions - update manually after testing
+WLROOTS_VERSION="0.19.2"
+SCENEFX_VERSION="0.4.1"
 
 echo "=== Using pinned dependency versions ==="
-
-# Default fallback versions
-DEFAULT_WLROOTS="0.19.2"
-DEFAULT_SCENEFX="0.4.1"
-
-# Use environment variables if set, otherwise use defaults
-WLROOTS_VERSION="${WLROOTS_VER:-$DEFAULT_WLROOTS}"
-SCENEFX_VERSION="${SCENEFX_VER:-$DEFAULT_SCENEFX}"
-
-echo "Detected versions:"
 echo "  wlroots: $WLROOTS_VERSION"
 echo "  scenefx: $SCENEFX_VERSION"
 
 # Setup build directories
-# Script is run from src/ directory, so we use ../build for build output
 BUILD_DIR="$(pwd)/../build"
 DEPS_DIR="$BUILD_DIR/deps"
 mkdir -p "$DEPS_DIR"
@@ -41,14 +31,12 @@ if [ ! -d "wlroots" ]; then
 fi
 cd wlroots
 
-# Clean previous build if exists
 rm -rf build
-
 meson setup build \
     --prefix="$LOCAL_PREFIX" \
     --buildtype=release \
-    -Dbackends=drm,libinput,x11 \
-    -Drenderers=gles2 \
+    -Dbackends=drm,libinput \
+    -Drenderers=gles2,vulkan \
     -Dexamples=false \
     -Dxwayland=enabled
 
@@ -65,9 +53,7 @@ if [ ! -d "scenefx" ]; then
 fi
 cd scenefx
 
-# Clean previous build if exists
 rm -rf build
-
 meson setup build \
     --prefix="$LOCAL_PREFIX" \
     --buildtype=release
@@ -78,12 +64,9 @@ ninja -C build install
 # 3. Build MangoWC
 echo ""
 echo "=== Building MangoWC ==="
-# We are already in src/ directory (where this script is called from)
-MANGOWC_SRC="$(pwd)"
+cd "$(pwd)/../../src"
 
-# Clean previous build if exists
 rm -rf build
-
 meson setup build \
     --prefix=/usr \
     --buildtype=release
@@ -98,5 +81,4 @@ cp build/mmsg "$BUILD_DIR/" 2>/dev/null || true
 
 echo ""
 echo "Build complete!"
-echo "Binaries:"
-ls -la "$BUILD_DIR/"mangowc "$BUILD_DIR/"mmsg 2>/dev/null || ls -la build/mangowc build/mmsg 2>/dev/null || echo "  (check build output)"
+ls -la "$BUILD_DIR/"mangowc "$BUILD_DIR/"mmsg 2>/dev/null || ls -la build/mangowc build/mmsg 2>/dev/null

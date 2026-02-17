@@ -140,7 +140,8 @@ def cmd_matrix(args):
             "install": data.get("install", {}),
             "depends": data.get("depends", {}),
             "control": data.get("control", {}),
-            "description": data.get("description", "")
+            "description": data.get("description", ""),
+            "post_build": data.get("post_build", "")
         }
         matrix.append(job)
         
