@@ -1,0 +1,67 @@
+name = "mangowc"
+repo = "github:DreamMaoMao/mangowc"
+version = "latest"
+type = "custom"
+# Pinned dependency versions - update manually after testing
+wlroots_version = "0.19.2"
+scenefx_version = "0.4.1"
+build = "WLROOTS_VER=0.19.2 SCENEFX_VER=0.4.1 bash ../scripts/build-mangowc.sh"
+binary = "mangowc"
+description = "A Wayland compositor based on wlroots and scenefx (dwm but wayland)"
+license = "MIT"
+homepage = "https://github.com/DreamMaoMao/mangowc"
+
+[depends]
+build = [
+    "git",
+    "meson",
+    "ninja-build",
+    "pkg-config",
+    "libwayland-dev",
+    "wayland-protocols",
+    "libinput-dev",
+    "libdrm-dev",
+    "libxkbcommon-dev",
+    "libpixman-1-dev",
+    "libdisplay-info-dev",
+    "libliftoff-dev",
+    "hwdata",
+    "libseat-dev",
+    "libpcre2-dev",
+    "xwayland",
+    "libxcb1-dev",
+    "libxcb-composite0-dev",
+    "libxcb-icccm4-dev",
+    "libxcb-res0-dev",
+    "libc6-dev",
+    "libavutil-dev",
+    "libavcodec-dev",
+    "libavformat-dev"
+]
+runtime = [
+    "libwayland-client0",
+    "libinput10",
+    "libdrm2",
+    "libxkbcommon0",
+    "libpixman-1-0",
+    "libdisplay-info1",
+    "libliftoff0",
+    "libseat1",
+    "libpcre2-8-0",
+    "xwayland"
+]
+optional = []
+
+[distro]
+codenames = ["trixie"]
+arch = "amd64"
+
+[control]
+maintainer = "Dinh Manh Dung <dungdinhmanh0209@gmail.com>"
+section = "x11"
+priority = "optional"
+homepage = "https://github.com/DreamMaoMao/mangowc"
+
+[install]
+"build/mangowc" = "/usr/bin/mangowc"
+"build/mmsg" = "/usr/bin/mmsg"

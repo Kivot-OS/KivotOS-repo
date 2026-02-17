@@ -45,6 +45,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential git jq curl
 
+      - name: Install Package Build Dependencies
+        if: matrix.depends && matrix.depends.build
+        run: |
+          echo "Installing build dependencies..."
+          DEPS=$(echo '${{ toJson(matrix.depends.build) }}' | jq -r '.[]' | tr '\n' ' ')
+          if [ -n "$DEPS" ]; then
+            echo "Installing: $DEPS"
+            sudo apt-get install -y $DEPS
+          fi
+
       - name: Setup Rust toolchain
         if: matrix.type == 'cargo' || matrix.type == 'make'
         uses: dtolnay/rust-toolchain@stable
