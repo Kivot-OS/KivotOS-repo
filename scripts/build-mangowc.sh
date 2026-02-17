@@ -2,11 +2,13 @@
 set -e
 
 # Pinned dependency versions - update manually after testing
+PIXMAN_VERSION="0.43.4"
 WAYLAND_VERSION="1.23.1"
 WLROOTS_VERSION="0.19.2"
 SCENEFX_VERSION="0.4.1"
 
 echo "=== Using pinned dependency versions ==="
+echo "  pixman: $PIXMAN_VERSION"
 echo "  wayland: $WAYLAND_VERSION"
 echo "  wlroots: $WLROOTS_VERSION"
 echo "  scenefx: $SCENEFX_VERSION"
@@ -23,7 +25,25 @@ mkdir -p "$LOCAL_PREFIX"
 export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig:$LOCAL_PREFIX/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
 export LD_LIBRARY_PATH="$LOCAL_PREFIX/lib:$LOCAL_PREFIX/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
 
-# 0. Build wayland (required by wlroots 0.19.2)
+# 0. Build pixman (required by wlroots 0.19.2)
+echo ""
+echo "=== Building pixman $PIXMAN_VERSION ==="
+cd "$DEPS_DIR"
+
+if [ ! -d "pixman" ]; then
+    git clone -b "pixman-$PIXMAN_VERSION" https://gitlab.freedesktop.org/pixman/pixman.git
+fi
+cd pixman
+
+rm -rf build
+meson setup build \
+    --prefix="$LOCAL_PREFIX" \
+    --buildtype=release
+
+ninja -C build
+ninja -C build install
+
+# 1. Build wayland (required by wlroots 0.19.2)
 echo ""
 echo "=== Building wayland $WAYLAND_VERSION ==="
 cd "$DEPS_DIR"
