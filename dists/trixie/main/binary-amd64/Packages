@@ -1,0 +1,76 @@
+Package: hellwal
+Priority: optional
+Section: utils
+Maintainer: Dinh Manh Dung <dungdinhmanh0209@gmail.com>
+Architecture: amd64
+Version: 1.0.7
+Filename: pool/main/h/hellwal/hellwal_1.0.7_amd64.deb
+Size: 99306
+MD5sum: 9a28bf4f05f36c29dcf53450e61007f1
+SHA1: a8e23e244313384666ba788eeb923966d7cba64f
+SHA256: 024f81f2c7af229f9641b8c95c18746b14b7e0d1e81f4aad10f722955169f566
+SHA512: 13a764b054a17a4ed56a954704e6fd82454f79e7abd3e2459263e79acc98a1b595b522845ba5f26505092e6471497546259a5aa003e5c36b8652bbcde698e2e3
+Description: Color palette generator (Pywal-like) written in C++
+Homepage: https://github.com/danihek/hellwal
+
+Package: mangowc
+Priority: optional
+Section: x11
+Maintainer: Dinh Manh Dung <dungdinhmanh0209@gmail.com>
+Architecture: amd64
+Version: 0.12.2
+Filename: pool/main/m/mangowc/mangowc_0.12.2_amd64.deb
+Size: 584
+MD5sum: 4ee0ba5bbba1daa0ea9b518142e03e9b
+SHA1: 1706d160a3fd2bb112c437a33b74f0f20c43f779
+SHA256: bc55511aa7f1178d1fa23e8382ebea3d535392e230ffe308df0771030fdfc770
+SHA512: 584811bf8a01ae99b2f0aeeec3256ab4bf8e6a8961677752d84cce518a2bd88177aaecfffb2b285d9ae65a830f081ff4d3414594ebff3ad442e8489d57c4b861
+Description: A Wayland compositor based on wlroots and scenefx (dwm but wayland)
+Homepage: https://github.com/DreamMaoMao/mangowc
+
+Package: matugen
+Priority: optional
+Section: utils
+Maintainer: Dinh Manh Dung <dungdinhmanh0209@gmail.com>
+Architecture: amd64
+Version: 4.0.0
+Filename: pool/main/m/matugen/matugen_4.0.0_amd64.deb
+Size: 2324272
+MD5sum: 2bcbc4678b4c10634c7a591f2f332cbd
+SHA1: 3ff0e6f497754ed64f0205838d8d51aaa8d1f33a
+SHA256: 5663162c098a4159486b4a470bc7139d1b177a3bb8f2401648cf46da2989b9d3
+SHA512: ac87a2d91add4c26b824d85b7a6a3738fc53a46d8d1ceace32e018d9401644407d4a66bd2b611a7bc0d9c802f4291f4e2a61bdc12d70e4f310bd95911cbeaae6
+Description: Material You color generation tool
+Homepage: https://github.com/InioX/matugen
+
+Package: wallust
+Priority: optional
+Section: utils
+Maintainer: Dinh Manh Dung <dungdinhmanh0209@gmail.com>
+Architecture: amd64
+Version: 3.5.2
+Depends: imagemagick
+Filename: pool/main/w/wallust/wallust_3.5.2_amd64.deb
+Size: 1900392
+MD5sum: baf85e39b86088756c78b91b2ef0c7b5
+SHA1: 9ebe4a86687aed2fcb55e768d54e9595a8d15ec2
+SHA256: 5f770bf84b2f647e4f219b98e5fefcdac50816ba7beeaeaad5a7b3cfb2ac8a06
+SHA512: 4b07635a3101ffad01e9de06d35f02bae827109f9b9cadece9abfaf463fea36492f346b35b4e0ecbad0dab1c1f1fb413cc0b0ab2e9160cabeedc1eb122070386
+Description: Generate color palettes from images
+Homepage: https://codeberg.org/explosion-mental/wallust
+
+Package: yazi
+Priority: optional
+Section: utils
+Maintainer: Dinh Manh Dung <dungdinhmanh0209@gmail.com>
+Architecture: amd64
+Version: 26.1.22
+Filename: pool/main/y/yazi/yazi_26.1.22_amd64.deb
+Size: 550
+MD5sum: 6d21d295bd90e2102eb10424354f2d71
+SHA1: 2872d79bd47c4d19a42022700a1ccf394209b25a
+SHA256: ec9e890ceecb18980749f9903c21a9957d0ed0b269d891c94ef496b66bb105bf
+SHA512: 5d674361f7c4155c0e4461ae4da5ee3f0bec92d855bd7a0c6a509c39d83de95d1fb034d7595fc75ebd1809641d4b5fe86c018a9c2b8ff0af02eb8f9657b4b012
+Description: Blazing fast terminal file manager
+Homepage: https://github.com/sxyazi/yazi
+
