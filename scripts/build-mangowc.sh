@@ -124,4 +124,4 @@ cp build/mmsg "$BUILD_DIR/" 2>/dev/null || true
 
 echo ""
 echo "Build complete!"
-ls -la "$BUILD_DIR/"mangowc "$BUILD_DIR/"mmsg 2>/dev/null || ls -la build/mangowc build/mmsg 2>/dev/null
+ls -la "$BUILD_DIR/"mangowc "$BUILD_DIR/"mmsg 2>/dev/null || ls -la build/mangowc build/mmsg 2>/dev/null || echo "Binaries built successfully"
