@@ -106,7 +106,8 @@ ninja -C build install
 # 3. Build MangoWC
 echo ""
 echo "=== Building MangoWC ==="
-cd "$(pwd)/../../src"
+# We are in src/ already where the script was called from
+MANGOWC_SRC="$(pwd)"
 
 rm -rf build
 meson setup build \
