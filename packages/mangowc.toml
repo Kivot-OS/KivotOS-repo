@@ -17,6 +17,8 @@ build = [
     "cmake",
     "libxml2-dev",
     "libffi-dev",
+    "libegl-dev",
+    "libgles2-mesa-dev",
     "libwayland-dev",
     "wayland-protocols",
     "libinput-dev",
