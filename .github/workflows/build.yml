@@ -115,13 +115,9 @@ jobs:
             build/deps
           key: mangowc-deps-${{ hashFiles('packages/mangowc/build.sh') }}-v1
 
-      - name: Install cargo-binstall
-        if: matrix.type == 'cargo'
-        uses: cargo-bins/cargo-binstall@main
-
       - name: Install cargo-deb
         if: matrix.type == 'cargo'
-        run: cargo binstall cargo-deb --no-confirm --quiet
+        run: cargo install cargo-deb
 
       - name: Install nfpm
         if: matrix.type != 'cargo'

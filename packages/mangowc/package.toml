@@ -37,7 +37,8 @@ build = [
     "libxcb-icccm4-dev",
     "libxcb-res0-dev",
     "libc6-dev",
-    "libudev-dev"
+    "libudev-dev",
+    "libmtdev-dev"
 ]
 runtime = [
     "libwayland-client0",
