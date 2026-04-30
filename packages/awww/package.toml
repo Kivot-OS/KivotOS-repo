@@ -2,9 +2,7 @@ name = "awww"
 repo = "codeberg:LGFae/awww"
 version = "v0.12.1"
 type = "custom"
-# Build workspace (binaries: awww + awww-daemon).
-# build.rs auto-generates shell completions to <repo>/completions/.
-# Man pages are .scd source — compile with scdoc into doc/generated/.
+toolchain = "nightly"
 build = "cargo build --release --workspace"
 post_build = "mkdir -p doc/generated && cd doc && for f in *.scd; do scdoc < \"$f\" | gzip -n > \"generated/${f%.scd}.gz\"; done"
 binary = "awww"

@@ -50,8 +50,7 @@ jobs:
 
   build:
     needs: matrix
-    runs-on: ubuntu-24.04
-    container: debian:trixie
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     if: needs.matrix.outputs.matrix != '{"include":[]}'
     strategy:
@@ -63,22 +62,20 @@ jobs:
         with:
           filter: blob:none
 
-      - name: Install base dependencies
-        run: |
-          apt-get update && apt-get upgrade -y
-          apt-get install -y build-essential git jq curl wget python3 python3-pip lsb-release
-
       - name: Install package build dependencies
         if: matrix.depends && matrix.depends.build
         run: |
+          sudo apt-get update
           DEPS=$(echo '${{ toJson(matrix.depends.build) }}' | jq -r '.[]' | tr '\n' ' ')
           if [ -n "$DEPS" ]; then
-            apt-get install -y $DEPS
+            sudo apt-get install -y $DEPS
           fi
 
       - name: Setup Rust toolchain
-        if: matrix.type == 'cargo' || matrix.type == 'make'
-        uses: dtolnay/rust-toolchain@stable
+        if: matrix.type == 'cargo' || matrix.type == 'make' || matrix.toolchain != ''
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain || 'stable' }}
 
       - name: Setup mold linker
         if: matrix.type == 'cargo'
@@ -111,11 +108,17 @@ jobs:
         run: |
           curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_amd64.deb" \
             -o /tmp/nfpm.deb
-          dpkg -i /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - uses: actions/setup-python@v5
+        if: matrix.type != 'cargo'
+        with:
+          python-version: "3.x"
+          cache: "pip"
 
       - name: Install Python deps
         if: matrix.type != 'cargo'
-        run: pip3 install --break-system-packages toml pyyaml
+        run: pip install toml pyyaml
 
       - name: Build ${{ matrix.name }}
         env:
@@ -182,10 +185,6 @@ jobs:
 
           esac
 
-      - name: sccache stats
-        if: matrix.type == 'cargo' || matrix.type == 'make'
-        run: sccache --show-stats || true
-
       - name: Collect cargo-deb output
         if: matrix.type == 'cargo'
         run: |
@@ -200,7 +199,7 @@ jobs:
       - name: Generate nfpm config & package
         if: matrix.type != 'cargo'
         run: |
-          python3 scripts/manager.py nfpm-config \
+          python scripts/manager.py nfpm-config \
             --package "${{ matrix.name }}" \
             --src-dir src \
             --output /tmp/nfpm.yaml
@@ -224,8 +223,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ubuntu-24.04
-    container: debian:trixie
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.ref == 'refs/heads/main'
     steps:
@@ -241,7 +239,7 @@ jobs:
           merge-multiple: true
 
       - name: Setup aptly
-        run: sudo apt-get install -y aptly
+        run: sudo apt-get update && sudo apt-get install -y aptly
 
       - name: Configure GPG
         run: |
@@ -308,7 +306,7 @@ jobs:
               kivotos s3:r2:
           fi
 
-          pip install awscli -q
+          pip install awscli -q --break-system-packages 2>/dev/null || pip install awscli -q
           aws configure set aws_access_key_id     "$R2_ACCESS_KEY_ID"
           aws configure set aws_secret_access_key "$R2_SECRET_ACCESS_KEY"
 

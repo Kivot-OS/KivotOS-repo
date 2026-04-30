@@ -297,6 +297,7 @@ def cmd_matrix(args) -> None:
             "repo":        data["repo"],
             "type":        data["type"],
             "deb_package": data.get("deb_package", ""),
+            "toolchain":   data.get("toolchain", ""),
             "build_cmd":   data.get("build", ""),
             "post_build":  data.get("post_build", ""),
             "install":     data.get("install", {}),
