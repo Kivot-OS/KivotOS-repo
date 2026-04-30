@@ -97,7 +97,7 @@ jobs:
           path: |
             build/local
             build/deps
-          key: mangowc-deps-${{ hashFiles('packages/mangowc/build.sh') }}-v1
+          key: mangowc-deps-${{ hashFiles('packages/mangowc/build.sh') }}-v2
 
       - name: Install cargo-deb
         if: matrix.type == 'cargo'

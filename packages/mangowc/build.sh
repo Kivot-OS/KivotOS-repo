@@ -3,7 +3,7 @@
 # Build script for mangowc.
 #
 # Vendored deps (Ubuntu 24.04 ships versions too old for wlroots 0.19):
-#   pixman, wayland, libinput, wlroots, scenefx
+#   pixman, wayland, wayland-protocols, libinput, wlroots, scenefx
 #
 # Invoked from CI with cwd = src/ (mangowc source root).
 # Output: src/build/mangowc, src/build/mmsg (picked up by nfpm).
@@ -12,6 +12,7 @@ set -euo pipefail
 
 PIXMAN_VERSION="0.43.4"
 WAYLAND_VERSION="1.23.1"
+WAYLAND_PROTOCOLS_VERSION="1.41"
 LIBINPUT_VERSION="1.27.1"
 WLROOTS_VERSION="0.19.2"
 SCENEFX_VERSION="0.4.1"
@@ -26,11 +27,12 @@ export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig:$LOCAL_PREFIX/lib/x86_64-lin
 export LD_LIBRARY_PATH="$LOCAL_PREFIX/lib:$LOCAL_PREFIX/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
 
 echo "=== Pinned dependency versions ==="
-echo "  pixman:   $PIXMAN_VERSION"
-echo "  wayland:  $WAYLAND_VERSION"
-echo "  libinput: $LIBINPUT_VERSION"
-echo "  wlroots:  $WLROOTS_VERSION"
-echo "  scenefx:  $SCENEFX_VERSION"
+echo "  pixman:            $PIXMAN_VERSION"
+echo "  wayland:           $WAYLAND_VERSION"
+echo "  wayland-protocols: $WAYLAND_PROTOCOLS_VERSION"
+echo "  libinput:          $LIBINPUT_VERSION"
+echo "  wlroots:           $WLROOTS_VERSION"
+echo "  scenefx:           $SCENEFX_VERSION"
 echo "  prefix:   $LOCAL_PREFIX"
 echo ""
 
@@ -69,6 +71,9 @@ build_dep pixman "$PIXMAN_VERSION" \
 build_dep wayland "$WAYLAND_VERSION" \
   "https://gitlab.freedesktop.org/wayland/wayland.git" "$WAYLAND_VERSION" \
   -Ddocumentation=false -Dtests=false
+
+build_dep wayland-protocols "$WAYLAND_PROTOCOLS_VERSION" \
+  "https://gitlab.freedesktop.org/wayland/wayland-protocols.git" "$WAYLAND_PROTOCOLS_VERSION"
 
 build_dep libinput "$LIBINPUT_VERSION" \
   "https://gitlab.freedesktop.org/libinput/libinput.git" "$LIBINPUT_VERSION" \
