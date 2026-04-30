@@ -155,6 +155,7 @@ jobs:
 
           clone_repo() {
             local url="$1" ver="$2"
+            rm -rf src
             if [[ "$ver" == "latest" ]]; then
               git clone --depth=1 "$url" src
             else
