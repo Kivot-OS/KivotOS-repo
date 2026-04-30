@@ -1,167 +1,365 @@
+#!/usr/bin/env python3
+"""
+KivotOS Package Manager.
+
+Commands:
+    matrix      - Emit GitHub Actions build matrix as JSON
+    update      - Check upstream releases and refresh packages.lock
+    nfpm-config - Generate nfpm.yaml for a single package (used by CI)
+"""
+
 import os
-import glob
 import json
 import argparse
 import sys
 import subprocess
+import concurrent.futures
+from pathlib import Path
 
-# Try importing toml, install if missing
 try:
     import toml
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "toml"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "toml", "-q"])
     import toml
 
-import requests
+try:
+    import requests
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests", "-q"])
+    import requests
 
-LOCK_FILE = "packages.lock"
-PACKAGES_DIR = "packages"
+try:
+    import yaml
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyyaml", "-q"])
+    import yaml
 
-def load_lock():
+LOCK_FILE    = Path("packages.lock")
+PACKAGES_DIR = Path("packages")
+GITHUB_API   = "https://api.github.com"
+CODEBERG_API = "https://codeberg.org/api/v1"
+REQUEST_TIMEOUT = 10
+
+
+def iter_package_tomls() -> list[Path]:
+    """Return sorted list of packages/<name>/package.toml files."""
+    return sorted(PACKAGES_DIR.glob("*/package.toml"))
+
+
+def pkg_name_of(toml_path: Path) -> str:
+    return toml_path.parent.name
+
+
+def load_lock() -> dict[str, str]:
     lock = {}
-    if os.path.exists(LOCK_FILE):
-        with open(LOCK_FILE, "r") as f:
-            for line in f:
-                if "=" in line:
-                    key, val = line.strip().split("=", 1)
-                    lock[key] = val
+    if LOCK_FILE.exists():
+        for line in LOCK_FILE.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                lock[key.strip()] = val.strip()
     return lock
 
-def save_lock(lock):
-    with open(LOCK_FILE, "w") as f:
-        f.write("# This file is automatically managed by update.yml\n")
-        for key in sorted(lock.keys()):
-            f.write(f"{key}={lock[key]}\n")
 
-def get_latest_version(repo_url):
-    # repo_url format: github:owner/repo or codeberg:owner/repo
-    provider, path = repo_url.split(":", 1)
-    
-    if provider == "github":
-        url = f"https://api.github.com/repos/{path}/releases/latest"
-        try:
-            r = requests.get(url)
+def save_lock(lock: dict[str, str]) -> None:
+    lines = ["# This file is automatically managed by update.yml\n"]
+    for key in sorted(lock):
+        lines.append(f"{key}={lock[key]}\n")
+    LOCK_FILE.write_text("".join(lines))
+
+
+def get_latest_version(repo: str) -> str | None:
+    """Resolve "github:owner/repo" or "codeberg:owner/repo" to its latest tag."""
+    if ":" not in repo:
+        return None
+
+    provider, path = repo.split(":", 1)
+
+    try:
+        if provider == "github":
+            url = f"{GITHUB_API}/repos/{path}/releases/latest"
+            headers = {}
+            token = os.environ.get("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
             r.raise_for_status()
-            tag = r.json()["tag_name"]
-            return tag
-        except Exception as e:
-            print(f"Error fetching github {path}: {e}", file=sys.stderr)
-            return None
-            
-    elif provider == "codeberg":
-        url = f"https://codeberg.org/api/v1/repos/{path}/releases"
-        try:
-            r = requests.get(url)
+            return r.json().get("tag_name")
+
+        elif provider == "codeberg":
+            url = f"{CODEBERG_API}/repos/{path}/releases"
+            r = requests.get(url, timeout=REQUEST_TIMEOUT)
             r.raise_for_status()
-            data = r.json()
-            if data and len(data) > 0:
-                return data[0]["tag_name"]
-        except Exception as e:
-            print(f"Error fetching codeberg {path}: {e}", file=sys.stderr)
-            return None
-            
+            releases = r.json()
+            if releases:
+                return releases[0].get("tag_name")
+
+    except requests.exceptions.Timeout:
+        print(f"  ⏱ Timeout: {repo}", file=sys.stderr)
+    except requests.exceptions.HTTPError as e:
+        print(f"  ❌ HTTP {e.response.status_code}: {repo}", file=sys.stderr)
+    except Exception as e:
+        print(f"  ❌ Error fetching {repo}: {e}", file=sys.stderr)
+
     return None
 
-def cmd_update(args):
-    lock = load_lock()
-    updated = False
-    
-    for toml_file in glob.glob(os.path.join(PACKAGES_DIR, "*.toml")):
-        pkg_name = os.path.splitext(os.path.basename(toml_file))[0]
-        try:
-            data = toml.load(toml_file)
-        except Exception as e:
-            print(f"Error parsing {toml_file}: {e}", file=sys.stderr)
-            continue
-            
-        repo = data.get("repo")
-        if not repo:
-            continue
-            
-        print(f"Checking {pkg_name} ({repo})...")
-        latest = get_latest_version(repo)
-        
-        if latest:
-            current = lock.get(pkg_name)
-            if current != latest:
-                print(f"  UPDATE: {current} -> {latest}")
-                lock[pkg_name] = latest
-                updated = True
-            else:
-                print(f"  Up-to-date: {current}")
-        else:
-            print(f"  Failed to get version for {pkg_name}")
-            
-    if updated:
-        save_lock(lock)
-        set_output("updated", "true")
-    else:
-        set_output("updated", "false")
 
-def set_output(name, value):
+def _check_one(args: tuple) -> tuple[str, str | None]:
+    pkg_name, repo = args
+    print(f"  checking {pkg_name} ({repo})...", flush=True)
+    return pkg_name, get_latest_version(repo)
+
+
+def _get_changed_packages() -> set[str] | None:
+    """
+    Detect which packages need rebuilding by diffing against HEAD~1.
+    Returns None when running outside CI or when scripts/ changed
+    (signal to rebuild everything).
+    """
+    if not os.environ.get("GITHUB_ACTIONS"):
+        return None
+
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "HEAD~1", "HEAD", "--", str(LOCK_FILE)],
+            capture_output=True, text=True, timeout=10
+        )
+
+        changed: set[str] = set()
+        if diff.returncode == 0 and diff.stdout.strip():
+            for line in diff.stdout.splitlines():
+                if line.startswith("+") and not line.startswith("+++") and "=" in line:
+                    pkg = line[1:].split("=")[0].strip()
+                    if pkg and not pkg.startswith("#"):
+                        changed.add(pkg)
+
+        pkg_diff = subprocess.run(
+            ["git", "diff", "HEAD~1", "HEAD", "--name-only", "--", "packages/"],
+            capture_output=True, text=True, timeout=10
+        )
+        if pkg_diff.returncode == 0:
+            for path in pkg_diff.stdout.splitlines():
+                parts = path.split("/")
+                if len(parts) >= 2 and parts[0] == "packages":
+                    changed.add(parts[1])
+
+        if not changed:
+            return None
+
+        scripts_diff = subprocess.run(
+            ["git", "diff", "HEAD~1", "HEAD", "--name-only", "--", "scripts/"],
+            capture_output=True, text=True, timeout=10
+        )
+        if scripts_diff.stdout.strip():
+            print("scripts/ changed → rebuilding all packages", file=sys.stderr)
+            return None
+
+        print(f"Changed packages: {', '.join(sorted(changed))}", file=sys.stderr)
+        return changed
+
+    except Exception as e:
+        print(f"Could not detect changes: {e} → rebuilding all", file=sys.stderr)
+        return None
+
+
+def generate_nfpm_yaml(pkg: dict, src_dir: str = "src") -> str:
+    """
+    Build an nfpm.yaml for non-cargo packages. Cargo packages skip this and
+    use cargo-deb, which reads upstream Cargo.toml directly.
+    """
+    depends = pkg.get("depends", {})
+    control = pkg.get("control", {})
+    install = pkg.get("install", {})
+
+    contents = []
+    for src, dst in install.items():
+        is_executable = any(dst.startswith(p) for p in [
+            "/usr/bin/", "/usr/sbin/", "/bin/", "/sbin/",
+        ])
+        contents.append({
+            "src": f"{src_dir}/{src}",
+            "dst": dst,
+            "file_info": {
+                "mode": "0755" if is_executable else "0644",
+            },
+        })
+
+    config = {
+        "name":        pkg["name"],
+        "arch":        "amd64",
+        "version":     pkg["version"],  # nfpm strips a leading 'v' itself
+        "maintainer":  control.get("maintainer", "KivotOS <kivotos@example.com>"),
+        "description": pkg.get("description", ""),
+        "homepage":    control.get("homepage", ""),
+        "license":     pkg.get("license", ""),
+        "section":     control.get("section", "utils"),
+        "priority":    control.get("priority", "optional"),
+        "depends":     depends.get("runtime", []),
+        "suggests":    depends.get("optional", []),
+        "contents":    contents,
+    }
+    config = {k: v for k, v in config.items() if v or v == 0}
+
+    return yaml.dump(config, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
+def set_output(name: str, value: str) -> None:
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"{name}={value}\n")
     else:
-        print(f"::set-output name={name}::{value}")
+        print(f"[OUTPUT] {name}={value}")
 
-def cmd_matrix(args):
+
+def write_summary(lines: list[str]) -> None:
+    if "GITHUB_STEP_SUMMARY" in os.environ:
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+            f.write("\n".join(lines) + "\n")
+
+
+def cmd_update(args) -> None:
     lock = load_lock()
+
+    all_toml = iter_package_tomls()
+    if args.package:
+        all_toml = [f for f in all_toml if pkg_name_of(f) == args.package]
+        if not all_toml:
+            print(f"❌ Package '{args.package}' not found", file=sys.stderr)
+            sys.exit(1)
+
+    to_check = []
+    for toml_file in all_toml:
+        try:
+            data = toml.loads(toml_file.read_text())
+        except Exception as e:
+            print(f"⚠ Error parsing {toml_file}: {e}", file=sys.stderr)
+            continue
+        repo = data.get("repo")
+        if repo:
+            to_check.append((pkg_name_of(toml_file), repo))
+
+    if not to_check:
+        print("No packages to check.")
+        set_output("updated", "false")
+        return
+
+    print(f"Checking {len(to_check)} package(s) in parallel...")
+
+    updated = False
+    summary_rows = ["## Package Updates\n", "| Package | Old | New |", "|---|---|---|"]
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        for pkg_name, latest in executor.map(_check_one, to_check):
+            if latest is None:
+                print(f"  ⚠ {pkg_name}: could not fetch version")
+                continue
+            current = lock.get(pkg_name)
+            if current != latest:
+                print(f"  ✅ {pkg_name}: {current} → {latest}")
+                summary_rows.append(f"| {pkg_name} | `{current}` | `{latest}` |")
+                lock[pkg_name] = latest
+                updated = True
+            else:
+                print(f"  — {pkg_name}: {current} (up-to-date)")
+
+    if updated:
+        save_lock(lock)
+        write_summary(summary_rows)
+
+    set_output("updated", "true" if updated else "false")
+
+
+def cmd_matrix(args) -> None:
+    lock = load_lock()
+    changed = _get_changed_packages()
+
     matrix = []
-    
-    # If package names provided, only build those
-    # Otherwise check for changes?
-    # For simplicity, we might just build what's changed or requested.
-    # But for a robust build system, we usually build what changed.
-    # Here we will output ALL packages in lockfile combined with TOML data
-    # The workflow filter will decide what to run.
-    
-    # Actually, the 'build.yml' needs to know what to build.
-    # If triggered by push to packages.lock, we should identify changed packages.
-    # But for now, let's just generate matrix for ALL packages defined in TOML
-    # and let the runner decide (or just rebuild all, which is safe but slow).
-    # Optimization: Filter by git diff in the workflow, pass list here.
-    
-    for toml_file in glob.glob(os.path.join(PACKAGES_DIR, "*.toml")):
-        pkg_name = os.path.splitext(os.path.basename(toml_file))[0]
-        data = toml.load(toml_file)
-        
-        # Merge version from lock
-        if pkg_name in lock:
-            data["version"] = lock[pkg_name]
-        
-        # Flatten structure for matrix
-        job = {
-            "name": pkg_name,
-            "version": data.get("version", "latest"),
-            "repo": data.get("repo", ""),
-            "type": data.get("type", "custom"),
-            "build_cmd": data.get("build", ""),
-            "install": data.get("install", {}),
-            "depends": data.get("depends", {}),
-            "control": data.get("control", {}),
+    for toml_file in iter_package_tomls():
+        pkg_name = pkg_name_of(toml_file)
+
+        if changed is not None and pkg_name not in changed:
+            continue
+
+        try:
+            data = toml.loads(toml_file.read_text())
+        except Exception as e:
+            print(f"⚠ Error parsing {toml_file}: {e}", file=sys.stderr)
+            continue
+
+        missing = [f for f in ("name", "repo", "type") if not data.get(f)]
+        if missing:
+            print(f"⚠ {toml_file.name} missing required fields: {missing}", file=sys.stderr)
+            continue
+
+        matrix.append({
+            "name":        pkg_name,
+            "version":     lock.get(pkg_name, data.get("version", "latest")),
+            "repo":        data["repo"],
+            "type":        data["type"],
+            "build_cmd":   data.get("build", ""),
+            "post_build":  data.get("post_build", ""),
+            "install":     data.get("install", {}),
+            "depends":     data.get("depends", {"build": [], "runtime": []}),
+            "control":     data.get("control", {}),
             "description": data.get("description", ""),
-            "post_build": data.get("post_build", "")
-        }
-        matrix.append(job)
-        
+            "license":     data.get("license", ""),
+        })
+
+    if not matrix:
+        print("No packages to build.", file=sys.stderr)
+
     print(json.dumps({"include": matrix}))
 
+
+def cmd_nfpm_config(args) -> None:
+    toml_file = PACKAGES_DIR / args.package / "package.toml"
+    if not toml_file.exists():
+        print(f"❌ {toml_file} not found", file=sys.stderr)
+        sys.exit(1)
+
+    lock = load_lock()
+    data = toml.loads(toml_file.read_text())
+    data["version"] = lock.get(args.package, data.get("version", "latest"))
+
+    yaml_content = generate_nfpm_yaml(data, src_dir=args.src_dir)
+    Path(args.output).write_text(yaml_content)
+    print(f"✅ Generated {args.output}")
+
+
 def main():
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command")
-    
-    update_parser = subparsers.add_parser("update")
-    matrix_parser = subparsers.add_parser("matrix")
-    
+    parser = argparse.ArgumentParser(
+        description="KivotOS Package Manager",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python scripts/manager.py matrix
+  python scripts/manager.py update
+  python scripts/manager.py update --package yazi
+  python scripts/manager.py nfpm-config --package hellwal --src-dir src --output /tmp/nfpm.yaml
+        """,
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("matrix", help="Generate GitHub Actions build matrix")
+
+    p_update = sub.add_parser("update", help="Check and update package versions")
+    p_update.add_argument("--package", "-p", default=None,
+                          help="Check only this package (default: all)")
+
+    p_nfpm = sub.add_parser("nfpm-config", help="Generate nfpm.yaml for a package")
+    p_nfpm.add_argument("--package", required=True, help="Package name")
+    p_nfpm.add_argument("--src-dir", default="src",       help="Source directory (default: src)")
+    p_nfpm.add_argument("--output",  default="nfpm.yaml", help="Output path (default: nfpm.yaml)")
+
     args = parser.parse_args()
-    
-    if args.command == "update":
-        cmd_update(args)
-    elif args.command == "matrix":
+
+    if args.command == "matrix":
         cmd_matrix(args)
-    else:
-        parser.print_help()
+    elif args.command == "update":
+        cmd_update(args)
+    elif args.command == "nfpm-config":
+        cmd_nfpm_config(args)
+
 
 if __name__ == "__main__":
     main()

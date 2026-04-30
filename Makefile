@@ -42,8 +42,8 @@ help:
 # List all packages
 list:
 	@echo "$(BLUE)Available packages:$(RESET)"
-	@for pkg in $(PACKAGES_DIR)/*.toml; do \
-		name=$$(basename $$pkg .toml); \
+	@for pkg in $(PACKAGES_DIR)/*/package.toml; do \
+		name=$$(basename $$(dirname $$pkg)); \
 		echo "  - $$name"; \
 	done
 
@@ -71,8 +71,8 @@ build: $(BUILD_DIR)
 ifdef PACKAGE
 	@$(MAKE) build-single PACKAGE=$(PACKAGE)
 else
-	@for pkg in $(PACKAGES_DIR)/*.toml; do \
-		name=$$(basename $$pkg .toml); \
+	@for pkg in $(PACKAGES_DIR)/*/package.toml; do \
+		name=$$(basename $$(dirname $$pkg)); \
 		$(MAKE) build-single PACKAGE=$$name || exit 1; \
 	done
 	@echo "$(GREEN)All packages built successfully!$(RESET)"
@@ -85,7 +85,7 @@ build-single: $(BUILD_DIR)/$(PACKAGE)
 	@echo "$(GREEN)$(PACKAGE) built successfully!$(RESET)"
 
 # Create build directory for package
-$(BUILD_DIR)/%: $(PACKAGES_DIR)/%.toml
+$(BUILD_DIR)/%: $(PACKAGES_DIR)/%/package.toml
 	@mkdir -p $@
 	@echo "$(YELLOW)Setting up $*...$(RESET)"
 	@$(PYTHON) scripts/setup-build.py $< $@
@@ -97,7 +97,7 @@ $(BUILD_DIR) $(DIST_DIR):
 # Debug: Show package info
 info:
 ifdef PACKAGE
-	@$(PYTHON) scripts/package-info.py $(PACKAGES_DIR)/$(PACKAGE).toml
+	@$(PYTHON) scripts/package-info.py $(PACKAGES_DIR)/$(PACKAGE)/package.toml
 else
 	@echo "Usage: make info PACKAGE=<name>"
 endif

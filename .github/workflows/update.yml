@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Package name to check (leave empty for all)"
+        required: false
+        type: string
+
+concurrency:
+  group: update-packages
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -13,25 +22,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-          
-      - name: Install dependencies
-        run: pip install toml requests
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: "pip"
+
+      - name: Install deps
+        run: pip install toml requests pyyaml
 
       - name: Check for updates
         id: check
-        run: python scripts/manager.py update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_PACKAGE: ${{ inputs.package }}
+        run: |
+          if [ -n "$TARGET_PACKAGE" ]; then
+            python scripts/manager.py update --package "$TARGET_PACKAGE"
+          else
+            python scripts/manager.py update
+          fi
 
-      - name: Commit and Push
+      - name: Commit and push packages.lock
         if: steps.check.outputs.updated == 'true'
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name  "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add packages.lock
-          git commit -m "chore: update packages.lock"
+          git commit -m "chore: update packages.lock
+
+          $(cat $GITHUB_STEP_SUMMARY 2>/dev/null || echo 'Automated version update')"
           git push
-        # Build workflow will auto-trigger on push to main

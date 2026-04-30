@@ -2,382 +2,338 @@ name: Build Packages
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - "packages/**.toml"
+      - "packages/**"
       - "packages.lock"
       - "scripts/**"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
-  pages: write
   id-token: write
 
+env:
+  NFPM_VERSION: "2.41.0"
+
 jobs:
+
   matrix:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-      - name: Generate Matrix
+          python-version: "3.x"
+          cache: "pip"
+
+      - name: Install deps
+        run: pip install toml requests pyyaml
+
+      - name: Generate matrix
         id: set-matrix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pip install toml requests
           MATRIX=$(python scripts/manager.py matrix)
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build:
     needs: matrix
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: needs.matrix.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Build Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git jq curl
+        with:
+          filter: blob:none
 
-      - name: Install Package Build Dependencies
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential git jq curl
+          version: 1.0
+
+      - name: Install package build dependencies
         if: matrix.depends && matrix.depends.build
         run: |
-          echo "Installing build dependencies..."
           DEPS=$(echo '${{ toJson(matrix.depends.build) }}' | jq -r '.[]' | tr '\n' ' ')
           if [ -n "$DEPS" ]; then
-            echo "Installing: $DEPS"
             sudo apt-get install -y $DEPS
           fi
 
       - name: Setup Rust toolchain
         if: matrix.type == 'cargo' || matrix.type == 'make'
         uses: dtolnay/rust-toolchain@stable
-          
-      - name: Build Package
+
+      - name: Setup mold linker
+        if: matrix.type == 'cargo'
+        uses: rui314/setup-mold@v1
+
+      - name: Cache Rust dependencies
+        if: matrix.type == 'cargo' || matrix.type == 'make'
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "rust-${{ matrix.name }}"
+          workspaces: "src -> target"
+          cache-on-failure: true
+
+      - name: Setup sccache
+        if: matrix.type == 'cargo' || matrix.type == 'make'
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Configure sccache env
+        if: matrix.type == 'cargo' || matrix.type == 'make'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache"    >> $GITHUB_ENV
+          echo "CARGO_INCREMENTAL=0"      >> $GITHUB_ENV
+          echo "CARGO_NET_RETRY=10"       >> $GITHUB_ENV
+
+      - name: Cache mangowc dependencies
+        if: matrix.name == 'mangowc'
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/local
+            build/deps
+          key: mangowc-deps-${{ hashFiles('packages/mangowc/build.sh') }}-v1
+
+      - name: Install cargo-binstall
+        if: matrix.type == 'cargo'
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-deb
+        if: matrix.type == 'cargo'
+        run: cargo binstall cargo-deb --no-confirm --quiet
+
+      - name: Install nfpm
+        if: matrix.type != 'cargo'
+        run: |
+          curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_amd64.deb" \
+            -o /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - uses: actions/setup-python@v5
+        if: matrix.type != 'cargo'
+        with:
+          python-version: "3.x"
+          cache: "pip"
+
+      - name: Install Python deps
+        if: matrix.type != 'cargo'
+        run: pip install toml pyyaml
+
+      - name: Build ${{ matrix.name }}
         env:
           APP_VERSION: ${{ matrix.version }}
-          POST_BUILD: ${{ matrix.post_build }}
+          POST_BUILD:  ${{ matrix.post_build }}
         run: |
-          # Create build directory
-          mkdir -p build
-          
-          # Run build command
-          echo "Building ${{ matrix.name }} version ${{ matrix.version }}"...
-          
-          # Convert repo shorthand to full URL
+          mkdir -p dist
+
           REPO_URL="${{ matrix.repo }}"
-          if [[ "$REPO_URL" == github:* ]]; then
-             REPO_URL="https://github.com/${REPO_URL#github:}"
-          elif [[ "$REPO_URL" == codeberg:* ]]; then
-             REPO_URL="https://codeberg.org/${REPO_URL#codeberg:}"
-          fi
-          
-          if [[ "${{ matrix.type }}" == "custom" ]]; then
-             git clone "$REPO_URL" src
-             cd src
-             if [[ "${{ matrix.version }}" != "latest" ]]; then
-               git checkout ${{ matrix.version }}
-             fi
-             ${{ matrix.build_cmd }}
-             # Run post-build if defined (e.g., extract from zip)
-             if [ -n "$POST_BUILD" ]; then
-               echo "Running post-build command..."
-               eval "$POST_BUILD"
-             fi
-             cd ..
-          elif [[ "${{ matrix.type }}" == "cargo" ]]; then
-            git clone "$REPO_URL" src
-            cd src
-            if [[ "${{ matrix.version }}" != "latest" ]]; then
-              git checkout ${{ matrix.version }}
-            fi
-            # Try cargo-deb first (if project supports it), fallback to cargo build
-            if cargo install cargo-deb 2>/dev/null && cargo deb 2>/dev/null; then
-              echo "Successfully built with cargo-deb"
+          case "$REPO_URL" in
+            github:*)   REPO_URL="https://github.com/${REPO_URL#github:}"   ;;
+            codeberg:*) REPO_URL="https://codeberg.org/${REPO_URL#codeberg:}" ;;
+          esac
+
+          clone_repo() {
+            local url="$1" ver="$2"
+            if [[ "$ver" == "latest" ]]; then
+              git clone --depth=1 "$url" src
             else
-              echo "Falling back to cargo build"
-              cargo build --release
+              git clone --depth=1 --branch "$ver" "$url" src 2>/dev/null || {
+                git clone --depth=1 "$url" src
+                cd src
+                git fetch --depth=1 origin "$ver"
+                git checkout "$ver"
+                cd ..
+              }
             fi
-            cd ..
-          elif [[ "${{ matrix.type }}" == "make" ]]; then
-             git clone "$REPO_URL" src
-             cd src
-             if [[ "${{ matrix.version }}" != "latest" ]]; then
-               git checkout ${{ matrix.version }}
-             fi
-             # Ensure rustup cargo is in PATH
-             source $HOME/.cargo/env 2>/dev/null || true
-             export PATH="$HOME/.cargo/bin:$PATH"
-             ${{ matrix.build_cmd }}
-             cd ..
-          elif [[ "${{ matrix.type }}" == "ninja" ]]; then
-             git clone "$REPO_URL" src
-             cd src
-             if [[ "${{ matrix.version }}" != "latest" ]]; then
-               git checkout ${{ matrix.version }}
-             fi
-             # Meson/Ninja build
-             meson setup build --prefix=/usr --buildtype=release
-             ninja -C build
-             cd ..
-          fi
-          
-      - name: Package .deb
-        if: matrix.type != 'custom'
+          }
+
+          case "${{ matrix.type }}" in
+
+            cargo)
+              clone_repo "$REPO_URL" "${{ matrix.version }}"
+              cd src
+              cargo deb
+              cd ..
+              ;;
+
+            make)
+              clone_repo "$REPO_URL" "${{ matrix.version }}"
+              cd src
+              source "$HOME/.cargo/env" 2>/dev/null || true
+              export PATH="$HOME/.cargo/bin:$PATH"
+              ${{ matrix.build_cmd }}
+              cd ..
+              ;;
+
+            custom)
+              clone_repo "$REPO_URL" "${{ matrix.version }}"
+              cd src
+              ${{ matrix.build_cmd }}
+              [[ -n "$POST_BUILD" ]] && eval "$POST_BUILD"
+              cd ..
+              ;;
+
+            ninja)
+              clone_repo "$REPO_URL" "${{ matrix.version }}"
+              cd src
+              meson setup build --prefix=/usr --buildtype=release
+              ninja -C build
+              cd ..
+              ;;
+
+          esac
+
+      - name: sccache stats
+        if: matrix.type == 'cargo' || matrix.type == 'make'
+        run: sccache --show-stats || true
+
+      - name: Collect cargo-deb output
+        if: matrix.type == 'cargo'
         run: |
-          PKG_NAME="${{ matrix.name }}"
-          VERSION="${{ matrix.version }}"
-          # Remove 'v' from version for debian compliance
-          DEB_VER="${VERSION#v}"
-          ARCH="amd64"
-          
-          # Create debian structure
-          mkdir -p pkg/DEBIAN
-          
-          # Install files based on JSON mapping
-          # We need to parse the JSON object 'install'
-          # Since it's passed as a string in matrix, we can access it via context or parse it
-          
-          # Helper function to install files
-          # Note: Github Actions matrix objects are available as JSON
-          
-          echo '${{ toJson(matrix.install) }}' > install_map.json
-          
-          jq -r 'to_entries[] | "\(.key) \(.value)"' install_map.json | while read -r SRC DST;
-          do
-             # Resolve SRC relative to build context
-             # If type is cargo/make, SRC might be in src/
-             
-             if [[ -f "src/$SRC" ]]; then
-                REAL_SRC="src/$SRC"
-             elif [[ -f "$SRC" ]]; then
-                REAL_SRC="$SRC"
-             else
-                echo "Warning: Source file $SRC not found"
-                continue
-             fi
-             
-             DEST_DIR="pkg$(dirname "$DST")"
-             mkdir -p "$DEST_DIR"
-             cp "$REAL_SRC" "pkg$DST"
-             # Set permissions based on file type
-             if [[ "$DST" == */bin/* ]] || [[ "$DST" == *completions* ]]; then
-                chmod 755 "pkg$DST"
-             else
-                chmod 644 "pkg$DST"
-             fi
-          done
-          
-          # Parse control from matrix
-          MAINTAINER=$(echo '${{ toJson(matrix.control) }}' | jq -r '.maintainer // "KivotOS <kivotos@example.com>"')
-          SECTION=$(echo '${{ toJson(matrix.control) }}' | jq -r '.section // "utils"')
-          PRIORITY=$(echo '${{ toJson(matrix.control) }}' | jq -r '.priority // "optional"')
-          HOMEPAGE=$(echo '${{ toJson(matrix.control) }}' | jq -r '.homepage // ""')
-          RUNTIME_DEPS=$(echo '${{ toJson(matrix.depends) }}' | jq -r '.runtime | join(", ") // ""')
-          
-          # Create control file
-          # Build control file content
-          CONTROL="Package: $PKG_NAME\n"
-          CONTROL+="Version: $DEB_VER\n"
-          CONTROL+="Architecture: $ARCH\n"
-          CONTROL+="Maintainer: $MAINTAINER\n"
-          CONTROL+="Description: ${{ matrix.description }}\n"
-          CONTROL+="Priority: $PRIORITY\n"
-          CONTROL+="Section: $SECTION\n"
-          if [ -n "$HOMEPAGE" ]; then
-            CONTROL+="Homepage: $HOMEPAGE\n"
-          fi
-          if [ -n "$RUNTIME_DEPS" ]; then
-            CONTROL+="Depends: $RUNTIME_DEPS\n"
-          fi
-          echo -e "$CONTROL" > pkg/DEBIAN/control
-          
-          # Build .deb
           mkdir -p dist
-          dpkg-deb --build pkg "dist/${PKG_NAME}_${DEB_VER}_${ARCH}.deb"
-          
-      - name: Find custom .deb
-        if: matrix.type == 'custom'
-        run: |
-          # Custom build script or cargo-deb should create .deb
-          mkdir -p dist
-          # Check src/target/debian/ (cargo-deb output)
-          if ls src/target/debian/*.deb 1> /dev/null 2>&1; then
+          if ls src/target/debian/*.deb 2>/dev/null; then
             cp src/target/debian/*.deb dist/
+          else
+            echo "❌ cargo-deb output not found"
+            exit 1
           fi
-          # Check src/ root (yazi build.sh output)
-          if ls src/*.deb 1> /dev/null 2>&1; then
-            cp src/*.deb dist/
-          fi
-          
-      - name: Package custom build to .deb
-        if: matrix.type == 'custom' && !cancelled()
+
+      - name: Generate nfpm config & package
+        if: matrix.type != 'cargo'
         run: |
-          # If no .deb found, create one from built binaries
-          if [ ! -f dist/*.deb ]; then
-            echo "No .deb found, creating package from built binaries..."
-            PKG_NAME="${{ matrix.name }}"
-            VERSION="${{ matrix.version }}"
-            DEB_VER="${VERSION#v}"
-            ARCH="amd64"
-            
-            mkdir -p pkg/DEBIAN
-            
-            # Parse install mappings from matrix
-            echo '${{ toJson(matrix.install) }}' > install_map.json
-            jq -r 'to_entries[] | "\(.key) \(.value)"' install_map.json | while read -r SRC DST;
-            do
-               if [[ -f "src/$SRC" ]]; then
-                  REAL_SRC="src/$SRC"
-               elif [[ -f "$SRC" ]]; then
-                  REAL_SRC="$SRC"
-               else
-                  echo "Warning: Source file $SRC not found"
-                  continue
-               fi
-               
-               DEST_DIR="pkg$(dirname "$DST")"
-               mkdir -p "$DEST_DIR"
-               cp "$REAL_SRC" "pkg$DST"
-               if [[ "$DST" == */bin/* ]] || [[ "$DST" == *completions* ]]; then
-                  chmod 755 "pkg$DST"
-               else
-                  chmod 644 "pkg$DST"
-               fi
-            done
-            
-            # Parse control fields
-            MAINTAINER=$(echo '${{ toJson(matrix.control) }}' | jq -r '.maintainer // "KivotOS <kivotos@example.com>"')
-            SECTION=$(echo '${{ toJson(matrix.control) }}' | jq -r '.section // "utils"')
-            PRIORITY=$(echo '${{ toJson(matrix.control) }}' | jq -r '.priority // "optional"')
-            HOMEPAGE=$(echo '${{ toJson(matrix.control) }}' | jq -r '.homepage // ""')
-            
-            CONTROL="Package: $PKG_NAME\n"
-            CONTROL+="Version: $DEB_VER\n"
-            CONTROL+="Architecture: $ARCH\n"
-            CONTROL+="Maintainer: $MAINTAINER\n"
-            CONTROL+="Description: ${{ matrix.description }}\n"
-            CONTROL+="Priority: $PRIORITY\n"
-            CONTROL+="Section: $SECTION\n"
-            if [ -n "$HOMEPAGE" ]; then
-              CONTROL+="Homepage: $HOMEPAGE\n"
-            fi
-            echo -e "$CONTROL" > pkg/DEBIAN/control
-            
-            mkdir -p dist
-            dpkg-deb --build pkg "dist/${PKG_NAME}_${DEB_VER}_${ARCH}.deb"
-          fi
-          
+          python scripts/manager.py nfpm-config \
+            --package "${{ matrix.name }}" \
+            --src-dir src \
+            --output /tmp/nfpm.yaml
+
+          echo "--- nfpm.yaml ---"
+          cat /tmp/nfpm.yaml
+
+          mkdir -p dist
+          nfpm package \
+            --config /tmp/nfpm.yaml \
+            --packager deb \
+            --target dist/
+
+          echo "✅ $(ls -lh dist/*.deb)"
+
       - uses: actions/upload-artifact@v4
         with:
           name: deb-${{ matrix.name }}
           path: dist/*.deb
+          retention-days: 7
 
   publish:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Download Artifacts
+        with:
+          filter: blob:none
+
+      - name: Download all .deb artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: deb-*
           path: all-debs
           merge-multiple: true
-          
-      - name: Setup Aptly
+
+      - name: Setup aptly
         run: sudo apt-get install -y aptly
-        
+
       - name: Configure GPG
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
           printf 'pinentry-mode loopback\nbatch\n' > ~/.gnupg/gpg.conf
-          printf 'allow-loopback-pinentry\n' > ~/.gnupg/gpg-agent.conf
+          printf 'allow-loopback-pinentry\n'       > ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent || true
 
-      - name: Import GPG Key
+      - name: Import GPG key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
-          
-      - name: Publish Repo
+        run: echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+
+      - name: Publish to Cloudflare R2
         env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_PASSPHRASE:       ${{ secrets.GPG_PASSPHRASE }}
+          R2_ACCESS_KEY_ID:     ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID:        ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET:            ${{ secrets.R2_BUCKET }}
         run: |
-          # Create aptly config
-          mkdir -p ~/.aptly public
-          cat > ~/.aptly.conf <<'JSON'
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG \
+                   | grep sec | awk '{print $2}' | cut -d/ -f2 | head -n1)
+
+          cat > ~/.aptly.conf <<JSON
           {
-            "rootDir": ".aptly",
+            "rootDir": "$HOME/.aptly",
             "downloadConcurrency": 4,
-            "FileSystemPublishEndpoints": {
-              "public": {
-                "rootDir": "./public",
-                "linkMethod": "copy"
+            "S3PublishEndpoints": {
+              "r2": {
+                "region":             "auto",
+                "bucket":             "${R2_BUCKET}",
+                "endpoint":           "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+                "awsAccessKeyID":     "${R2_ACCESS_KEY_ID}",
+                "awsSecretAccessKey": "${R2_SECRET_ACCESS_KEY}",
+                "acl":                "none",
+                "plusWorkaround":     true,
+                "forceSigV2":         false
               }
             }
           }
           JSON
-          
-          # Initialize Repo
+
           aptly repo create -distribution=trixie -component=main kivotos
-          
-          # Add packages
+
           find all-debs -name "*.deb" -exec aptly repo add kivotos {} +
-          
-          # Get Key ID (first secret key)
-          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d/ -f2 | head -n1)
-          
-          # Publish to filesystem
-          aptly publish repo \
-            -architectures=amd64 \
-            -gpg-key="$KEY_ID" \
-            -passphrase="$GPG_PASSPHRASE" \
-            kivotos \
-            filesystem:public:
-            
-          # Add public key
-          gpg --export --armor "$KEY_ID" > public/pubkey.gpg
-          
-          # Generate directory index HTML for browsing
-          echo "Generating directory indexes..."
-          generate_index() {
-            local dir=$1
-            pushd "$dir" > /dev/null
-            local title="Index of ${dir#public}"
-            {
-              echo "<!DOCTYPE html><html><head><title>$title</title><style>"
-              echo "body{font-family:monospace;background:#fff;color:#000;margin:2em;}"
-              echo "hr{border:0;border-top:1px solid #ccc;}"
-              echo "a{text-decoration:none;color:#00e;}"
-              echo "a:hover{text-decoration:underline;}"
-              echo "</style></head><body>"
-              echo "<h1>$title</h1><hr><pre>"
-              echo "<a href='../'>../</a>"
-              ls -1p | grep -v "index.html" | while read -r line; do
-                local mtime=$(stat -c '%y' "$line" 2>/dev/null | cut -d'.' -f1 | tr ' ' '_' || echo "-$(date '+%Y-%m-%d_%H:%M')")
-                local size=$(du -sh "$line" 2>/dev/null | cut -f1 || echo "-")
-                printf "<a href='%s'>%-50s</a> %20s %10s\\n" "$line" "$line" "$mtime" "$size"
-              done
-              echo "</pre><hr></body></html>"
-            } > index.html
-            popd > /dev/null
-          }
-          export -f generate_index
-          find public -type d -exec bash -c 'generate_index "$0"' {} \;
-          
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          force_orphan: true
+
+          echo "📦 Packages to publish:"
+          aptly repo show -with-packages kivotos
+
+          if aptly publish show trixie s3:r2: &>/dev/null; then
+            echo "🔄 Updating existing publication..."
+            aptly publish update \
+              -gpg-key="$KEY_ID" \
+              -passphrase="$GPG_PASSPHRASE" \
+              trixie s3:r2:
+          else
+            echo "🚀 Publishing for the first time..."
+            aptly publish repo \
+              -distribution=trixie \
+              -architectures=amd64 \
+              -gpg-key="$KEY_ID" \
+              -passphrase="$GPG_PASSPHRASE" \
+              kivotos s3:r2:
+          fi
+
+          pip install awscli -q
+          aws configure set aws_access_key_id     "$R2_ACCESS_KEY_ID"
+          aws configure set aws_secret_access_key "$R2_SECRET_ACCESS_KEY"
+
+          gpg --export --armor "$KEY_ID" > pubkey.gpg
+          aws s3 cp pubkey.gpg "s3://${R2_BUCKET}/pubkey.gpg" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --content-type "application/pgp-keys"
+
+          echo "✅ Published to R2 successfully!"

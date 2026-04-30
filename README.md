@@ -6,31 +6,20 @@ Personal APT repository for Debian Trixie (amd64) with curated CLI tools.
 
 ---
 
-## 📦 Available Packages
-
-| Package | Description | Source |
-|---------|-------------|--------|
-| **yazi** | Blazing fast terminal file manager | [sxyazi/yazi](https://github.com/sxyazi/yazi) |
-| **hellwal** | Color palette generator (Pywal-like) in C++ | [danihek/hellwal](https://github.com/danihek/hellwal) |
-| **wallust** | Generate color palettes from images | [explosion-mental/wallust](https://codeberg.org/explosion-mental/wallust) |
-| **matugen** | Material You color generation tool | [InioX/matugen](https://github.com/InioX/matugen) |
-
----
-
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1) Import repository GPG key
 
 ```bash
-curl -fsSL https://kivot-os.github.io/KivotOS-repo/pubkey.gpg \
-| sudo gpg --dearmor -o /usr/share/keyrings/kivotos.gpg
+curl -fsSL https://kivotos-repo.dungdinhmanh0209.workers.dev/pubkey.gpg \
+| sudo gpg --dearmor -o /etc/apt/keyrings/kivotos.gpg
 ```
 
 ### 2) Add sources list (trixie/main)
 
 ```bash
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kivotos.gpg] \
-https://kivot-os.github.io/KivotOS-repo/ trixie main" \
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/kivotos.gpg] \
+https://kivotos-repo.dungdinhmanh0209.workers.dev trixie main" \
 | sudo tee /etc/apt/sources.list.d/kivotos.list
 ```
 
@@ -72,4 +61,5 @@ This repository configuration is provided as-is. Each package retains its origin
 ---
 
 **Repository:** https://github.com/kivot-os/KivotOS-repo  
-**APT URL:** https://kivot-os.github.io/KivotOS-repo/
+**APT URL:** https://kivotos-repo.dungdinhmanh0209.workers.dev/  
+**Worker source:** https://github.com/kivot-os/kivotos-repo-worker
