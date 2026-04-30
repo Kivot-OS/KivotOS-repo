@@ -264,20 +264,18 @@ jobs:
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG \
                    | grep sec | awk '{print $2}' | cut -d/ -f2 | head -n1)
 
+          # Use filesystem endpoint — R2 does not support x-amz-acl headers
+          # so aptly S3 publish always fails. Publish locally then sync with awscli.
+          mkdir -p public
+
           cat > ~/.aptly.conf <<JSON
           {
             "rootDir": "$HOME/.aptly",
             "downloadConcurrency": 4,
-            "S3PublishEndpoints": {
-              "r2": {
-                "region":             "auto",
-                "bucket":             "${R2_BUCKET}",
-                "endpoint":           "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
-                "awsAccessKeyID":     "${R2_ACCESS_KEY_ID}",
-                "awsSecretAccessKey": "${R2_SECRET_ACCESS_KEY}",
-                "acl":                "none",
-                "plusWorkaround":     true,
-                "forceSigV2":         false
+            "FileSystemPublishEndpoints": {
+              "public": {
+                "rootDir": "$(pwd)/public",
+                "linkMethod": "copy"
               }
             }
           }
@@ -290,29 +288,23 @@ jobs:
           echo "📦 Packages to publish:"
           aptly repo show -with-packages kivotos
 
-          if aptly publish show trixie s3:r2: &>/dev/null; then
-            echo "🔄 Updating existing publication..."
-            aptly publish update \
-              -gpg-key="$KEY_ID" \
-              -passphrase="$GPG_PASSPHRASE" \
-              trixie s3:r2:
-          else
-            echo "🚀 Publishing for the first time..."
-            aptly publish repo \
-              -distribution=trixie \
-              -architectures=amd64 \
-              -gpg-key="$KEY_ID" \
-              -passphrase="$GPG_PASSPHRASE" \
-              kivotos s3:r2:
-          fi
+          aptly publish repo \
+            -distribution=trixie \
+            -architectures=amd64 \
+            -gpg-key="$KEY_ID" \
+            -passphrase="$GPG_PASSPHRASE" \
+            kivotos filesystem:public:
 
-          pip install awscli -q --break-system-packages 2>/dev/null || pip install awscli -q
+          # Export public key
+          gpg --export --armor "$KEY_ID" > public/pubkey.gpg
+
+          # Sync to R2 with awscli (no ACL headers sent)
+          pip install awscli -q
           aws configure set aws_access_key_id     "$R2_ACCESS_KEY_ID"
           aws configure set aws_secret_access_key "$R2_SECRET_ACCESS_KEY"
 
-          gpg --export --armor "$KEY_ID" > pubkey.gpg
-          aws s3 cp pubkey.gpg "s3://${R2_BUCKET}/pubkey.gpg" \
+          aws s3 sync public/ "s3://${R2_BUCKET}/" \
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            --content-type "application/pgp-keys"
+            --delete
 
           echo "✅ Published to R2 successfully!"
