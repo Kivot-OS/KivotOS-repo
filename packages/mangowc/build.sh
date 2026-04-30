@@ -96,4 +96,4 @@ ninja -C build
 
 echo ""
 echo "Build complete:"
-ls -lh build/mangowc build/mmsg
+ls -lh build/mango build/mmsg

@@ -65,5 +65,5 @@ priority = "optional"
 homepage = "https://github.com/DreamMaoMao/mangowc"
 
 [install]
-"build/mangowc" = "/usr/bin/mangowc"
+"build/mango" = "/usr/bin/mangowc"
 "build/mmsg" = "/usr/bin/mmsg"
