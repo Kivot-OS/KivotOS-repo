@@ -22,7 +22,6 @@ build = [
     "libgbm-dev",
     "libwayland-dev",
     "wayland-protocols",
-    "libinput-dev",
     "libdrm-dev",
     "libxkbcommon-dev",
     "libpixman-1-dev",
@@ -37,11 +36,13 @@ build = [
     "libxcb-ewmh-dev",
     "libxcb-icccm4-dev",
     "libxcb-res0-dev",
-    "libc6-dev"
+    "libc6-dev",
+    "libudev-dev",
+    "libmtdev-dev",
+    "libevdev-dev"
 ]
 runtime = [
     "libwayland-client0",
-    "libinput10",
     "libdrm2",
     "libxkbcommon0",
     "libpixman-1-0",
