@@ -13,6 +13,7 @@ set -euo pipefail
 
 PIXMAN_VERSION="0.43.4"
 WAYLAND_VERSION="1.23.1"
+LIBINPUT_VERSION="1.27.1"
 WLROOTS_VERSION="0.19.2"
 SCENEFX_VERSION="0.4.1"
 
@@ -26,11 +27,12 @@ export PKG_CONFIG_PATH="$LOCAL_PREFIX/lib/pkgconfig:$LOCAL_PREFIX/lib/x86_64-lin
 export LD_LIBRARY_PATH="$LOCAL_PREFIX/lib:$LOCAL_PREFIX/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
 
 echo "=== Pinned dependency versions ==="
-echo "  pixman:  $PIXMAN_VERSION"
-echo "  wayland: $WAYLAND_VERSION"
-echo "  wlroots: $WLROOTS_VERSION"
-echo "  scenefx: $SCENEFX_VERSION"
-echo "  prefix:  $LOCAL_PREFIX"
+echo "  pixman:   $PIXMAN_VERSION"
+echo "  wayland:  $WAYLAND_VERSION"
+echo "  libinput: $LIBINPUT_VERSION"
+echo "  wlroots:  $WLROOTS_VERSION"
+echo "  scenefx:  $SCENEFX_VERSION"
+echo "  prefix:   $LOCAL_PREFIX"
 echo ""
 
 # Stamp file lets a cache-restored prefix skip the rebuild.
@@ -69,6 +71,10 @@ build_dep pixman "$PIXMAN_VERSION" \
 build_dep wayland "$WAYLAND_VERSION" \
   "https://gitlab.freedesktop.org/wayland/wayland.git" "$WAYLAND_VERSION" \
   -Ddocumentation=false -Dtests=false
+
+build_dep libinput "$LIBINPUT_VERSION" \
+  "https://gitlab.freedesktop.org/libinput/libinput.git" "$LIBINPUT_VERSION" \
+  -Ddebug-gui=false -Dtests=false -Dlibwacom=false -Ddocumentation=false
 
 build_dep wlroots "$WLROOTS_VERSION" \
   "https://gitlab.freedesktop.org/wlroots/wlroots.git" "$WLROOTS_VERSION" \

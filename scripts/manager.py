@@ -180,7 +180,7 @@ def generate_nfpm_yaml(pkg: dict, src_dir: str = "src") -> str:
             "src": f"{src_dir}/{src}",
             "dst": dst,
             "file_info": {
-                "mode": "0755" if is_executable else "0644",
+                "mode": 0o755 if is_executable else 0o644,
             },
         })
 
