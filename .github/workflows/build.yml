@@ -243,7 +243,9 @@ jobs:
           APTLY_VERSION="1.5.0"
           wget -q "https://github.com/aptly-dev/aptly/releases/download/v${APTLY_VERSION}/aptly_${APTLY_VERSION}_linux_amd64.tar.gz" \
             -O /tmp/aptly.tar.gz
-          sudo tar -xzf /tmp/aptly.tar.gz -C /usr/local/bin aptly
+          sudo tar -xzf /tmp/aptly.tar.gz -C /usr/local/bin \
+            --strip-components=1 \
+          aptly_${APTLY_VERSION}_linux_amd64/aptly
 
       - name: Configure GPG
         run: |
@@ -311,13 +313,14 @@ jobs:
               kivotos s3:r2:
           fi
 
-          pip install awscli -q
-          aws configure set aws_access_key_id     "$R2_ACCESS_KEY_ID"
-          aws configure set aws_secret_access_key "$R2_SECRET_ACCESS_KEY"
-
+          # Thay toàn bộ phần pip install + aws configure + aws s3 cp bằng:
           gpg --export --armor "$KEY_ID" > pubkey.gpg
-          aws s3 cp pubkey.gpg "s3://${R2_BUCKET}/pubkey.gpg" \
-            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            --content-type "application/pgp-keys"
+          
+          curl -X PUT \
+            "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}/pubkey.gpg" \
+            --aws-sigv4 "aws:amz:auto:s3" \
+            --user "${R2_ACCESS_KEY_ID}:${R2_SECRET_ACCESS_KEY}" \
+            -H "Content-Type: application/pgp-keys" \
+            --data-binary @pubkey.gpg
 
           echo "✅ Published to R2 successfully!"
