@@ -281,7 +281,6 @@ jobs:
                 "endpoint":           "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
                 "awsAccessKeyID":     "${R2_ACCESS_KEY_ID}",
                 "awsSecretAccessKey": "${R2_SECRET_ACCESS_KEY}",
-                "acl":                "none",
                 "plusWorkaround":     true,
                 "forceSigV2":         false,
                 "disableMultiDel":    false
