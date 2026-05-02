@@ -137,6 +137,7 @@ jobs:
           APP_VERSION: ${{ matrix.version }}
           POST_BUILD:  ${{ matrix.post_build }}
         run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
           mkdir -p dist
 
           REPO_URL="${{ matrix.repo }}"
