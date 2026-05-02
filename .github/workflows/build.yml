@@ -104,7 +104,7 @@ jobs:
         if: matrix.type == 'cargo'
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
-          cargo binstall cargo-deb -y --no-confirm
+          cargo binstall cargo-deb -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Cache nfpm
