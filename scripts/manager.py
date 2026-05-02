@@ -307,6 +307,7 @@ def cmd_matrix(args) -> None:
             "control":     data.get("control", {}),
             "description": data.get("description", ""),
             "license":     data.get("license", ""),
+            "cache":       data.get("cache", None),
         })
 
     if not matrix:
