@@ -1,6 +1,6 @@
 name = "mangowc"
 repo = "github:DreamMaoMao/mangowc"
-version = "0.12.2"
+version = "latest"
 type = "custom"
 build = "bash ../packages/mangowc/build.sh"
 binary = "mangowc"
