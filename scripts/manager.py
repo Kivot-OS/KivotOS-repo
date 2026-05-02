@@ -118,7 +118,9 @@ def _get_changed_packages() -> set[str] | None:
     """
     if not os.environ.get("GITHUB_ACTIONS"):
         return None
-
+    event = os.environ.get("GITHUB_EVENT_NAME", "")
+    if event == "workflow_dispatch":
+        return None
     try:
         diff = subprocess.run(
             ["git", "diff", "HEAD~1", "HEAD", "--", str(LOCK_FILE)],
