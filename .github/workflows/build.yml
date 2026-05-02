@@ -291,7 +291,7 @@ jobs:
 
           aptly repo create -distribution=trixie -component=main kivotos
 
-          find all-debs -name "*.deb" -exec aptly repo add kivotos {} +
+          find all-debs -name "*.deb" -exec aptly repo add -force- kivotos {} +
 
           echo "📦 Packages to publish:"
           aptly repo show -with-packages kivotos
