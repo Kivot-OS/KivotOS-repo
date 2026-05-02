@@ -167,7 +167,6 @@ jobs:
             cargo)
               clone_repo "$REPO_URL" "${{ matrix.version }}"
               cd src
-              echo "PATH: $PATH"
               cargo deb
               cd ..
               ;;
