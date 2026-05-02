@@ -89,22 +89,31 @@ jobs:
           workspaces: "src -> target"
           cache-on-failure: true
 
-
-      - name: Cache mangowc dependencies
-        if: matrix.name == 'mangowc'
+      - name: Cache build dependencies
+        if: matrix.cache
         uses: actions/cache@v4
         with:
-          path: |
-            build/local
-            build/deps
-          key: mangowc-deps-${{ hashFiles('packages/mangowc/build.sh') }}-v2
+          path: ${{ join(fromJson(toJson(matrix.cache.paths)), '\n') }}
+          key: ${{ matrix.cache.key }}
+
+      - name: Install cargo-binstall
+        if: matrix.type == 'cargo'
+        uses: cargo-bins/cargo-binstall@main
 
       - name: Install cargo-deb
         if: matrix.type == 'cargo'
-        run: cargo install cargo-deb
+        run: cargo binstall cargo-deb -y
+
+      - name: Cache nfpm
+        if: matrix.type != 'cargo'
+        id: cache-nfpm
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/nfpm
+          key: nfpm-${{ env.NFPM_VERSION }}
 
       - name: Install nfpm
-        if: matrix.type != 'cargo'
+        if: matrix.type != 'cargo' && steps.cache-nfpm.outputs.cache-hit != 'true'
         run: |
           curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_amd64.deb" \
             -o /tmp/nfpm.deb
