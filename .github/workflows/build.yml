@@ -312,12 +312,14 @@ jobs:
           if aptly publish show trixie s3:r2: &>/dev/null; then
             echo "🔄 Updating existing publication..."
             aptly publish update \
+              -force-overwrite \
               -gpg-key="$KEY_ID" \
               -passphrase="$GPG_PASSPHRASE" \
               trixie s3:r2:
           else
             echo "🚀 Publishing for the first time..."
             aptly publish repo \
+              -force-overwrite \
               -distribution=trixie \
               -architectures=amd64 \
               -gpg-key="$KEY_ID" \
