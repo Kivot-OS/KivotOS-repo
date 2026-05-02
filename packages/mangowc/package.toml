@@ -67,3 +67,7 @@ homepage = "https://github.com/DreamMaoMao/mangowc"
 [install]
 "build/mango" = "/usr/bin/mangowc"
 "build/mmsg" = "/usr/bin/mmsg"
+
+[cache]
+paths = ["build/local", "build/deps"]
+key = "mangowc-deps-v2"
