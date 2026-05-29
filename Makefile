@@ -71,11 +71,19 @@ build: $(BUILD_DIR)
 ifdef PACKAGE
 	@$(MAKE) build-single PACKAGE=$(PACKAGE)
 else
-	@for pkg in $(PACKAGES_DIR)/*/package.toml; do \
+	@failed=""; \
+	for pkg in $(PACKAGES_DIR)/*/package.toml; do \
 		name=$$(basename $$(dirname $$pkg)); \
-		$(MAKE) build-single PACKAGE=$$name || exit 1; \
-	done
-	@echo "$(GREEN)All packages built successfully!$(RESET)"
+		if ! $(MAKE) build-single PACKAGE=$$name; then \
+			echo "$(RED)FAILED: $$name$(RESET)"; \
+			failed="$$failed $$name"; \
+		fi \
+	done; \
+	if [ -n "$$failed" ]; then \
+		echo "$(RED)Failed packages:$$failed$(RESET)"; \
+		exit 1; \
+	fi; \
+	echo "$(GREEN)All packages built successfully!$(RESET)"
 endif
 
 # Build single package

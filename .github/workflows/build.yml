@@ -16,6 +16,7 @@ concurrency:
 permissions:
   contents: write
   id-token: write
+  issues: write
 
 env:
   NFPM_VERSION: "2.41.0"
@@ -338,3 +339,27 @@ jobs:
             --data-binary @pubkey.gpg
 
           echo "✅ Published to R2 successfully!"
+
+  report:
+    needs: [matrix, build, publish]
+    if: always() && (needs.matrix.result == 'failure' || needs.build.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: ci
+    steps:
+      - name: Ensure ci-failure label exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.getLabel({ ...context.repo, name: 'ci-failure' });
+            } catch {
+              await github.rest.issues.createLabel({ ...context.repo, name: 'ci-failure', color: 'd73a4a' });
+            }
+
+      - name: Create issue on failure + AI analysis
+        uses: actions/github-script@v7
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        with:
+          script-path: scripts/ci-report.js
