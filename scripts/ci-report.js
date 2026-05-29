@@ -148,4 +148,4 @@ async function main() {
   }
 }
 
-await main();
+module.exports = { main, getFailedJobs, getFailedSteps, buildIssueBody, buildFailureDetail, callAI };
