@@ -20,7 +20,6 @@ build = [
     "wayland-protocols",
     "liblz4-dev",
     "scdoc",
-    "package-does-not-exist-xyz-2026",
 ]
 runtime = [
     "libwayland-client0",
