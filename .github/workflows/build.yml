@@ -20,6 +20,7 @@ permissions:
 
 env:
   NFPM_VERSION: "2.41.0"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
 
@@ -29,11 +30,11 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses:   actions/checkout@v6.0.2
         with:
           fetch-depth: 2
 
-      - uses: actions/setup-python@v5
+      - uses:   actions/setup-python@v6.2.0
         with:
           python-version: "3.x"
           cache: "pip"
@@ -59,7 +60,7 @@ jobs:
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses:   actions/checkout@v6.0.2
         with:
           filter: blob:none
 
@@ -84,7 +85,7 @@ jobs:
 
       - name: Cache Rust dependencies
         if: matrix.type == 'cargo' || matrix.type == 'make'
-        uses: Swatinem/rust-cache@v2
+        uses:   Swatinem/rust-cache@v2.9.1
         with:
           prefix-key: "rust-${{ matrix.name }}"
           workspaces: "src -> target"
@@ -92,14 +93,14 @@ jobs:
 
       - name: Cache build dependencies
         if: matrix.cache
-        uses: actions/cache@v4
+        uses:   actions/cache@v5.0.5
         with:
           path: ${{ join(fromJson(toJson(matrix.cache.paths)), '\n') }}
           key: ${{ matrix.cache.key }}
 
       - name: Install cargo-binstall
         if: matrix.type == 'cargo'
-        uses: cargo-bins/cargo-binstall@main
+        uses:   cargo-bins/cargo-binstall@v1.19.1
 
       - name: Install cargo-deb
         if: matrix.type == 'cargo'
@@ -111,7 +112,7 @@ jobs:
       - name: Cache nfpm
         if: matrix.type != 'cargo'
         id: cache-nfpm
-        uses: actions/cache@v4
+        uses:   actions/cache@v5.0.5
         with:
           path: /usr/local/bin/nfpm
           key: nfpm-${{ env.NFPM_VERSION }}
@@ -123,7 +124,7 @@ jobs:
             -o /tmp/nfpm.deb
           sudo dpkg -i /tmp/nfpm.deb
 
-      - uses: actions/setup-python@v5
+      - uses:   actions/setup-python@v6.2.0
         if: matrix.type != 'cargo'
         with:
           python-version: "3.x"
@@ -229,7 +230,7 @@ jobs:
 
           echo "✅ $(ls -lh dist/*.deb)"
 
-      - uses: actions/upload-artifact@v4
+      - uses:   actions/upload-artifact@v7.0.1
         with:
           name: deb-${{ matrix.name }}
           path: dist/*.deb
@@ -241,12 +242,12 @@ jobs:
     timeout-minutes: 15
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses:   actions/checkout@v6.0.2
         with:
           filter: blob:none
 
       - name: Download all .deb artifacts
-        uses: actions/download-artifact@v4
+        uses:   actions/download-artifact@v8.0.1
         with:
           pattern: deb-*
           path: all-debs
@@ -348,7 +349,7 @@ jobs:
     environment: ci
     steps:
       - name: Ensure ci-failure label exists
-        uses: actions/github-script@v7
+        uses:   actions/github-script@v9.0.0
         with:
           script: |
             try {
@@ -358,7 +359,7 @@ jobs:
             }
 
       - name: Create issue on failure + AI analysis
-        uses: actions/github-script@v7
+        uses:   actions/github-script@v9.0.0
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         with:
