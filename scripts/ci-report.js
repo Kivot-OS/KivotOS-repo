@@ -77,7 +77,7 @@ module.exports = async function(github, context, core) {
     }
 
     const data = await resp.json();
-    return data.choices?.[0]?.message?.content;
+    return data.choices?.[0]?.message?.content ?? data.message?.content;
   }
 
   const jobs = await getFailedJobs();
