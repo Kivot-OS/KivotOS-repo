@@ -66,6 +66,7 @@ module.exports = async function(github, context, core) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
+        stream: false,
         temperature: 0.1,
         max_tokens: 1200,
       }),
