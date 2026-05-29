@@ -364,5 +364,5 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         with:
           script: |
-            const report = require(process.env.GITHUB_WORKSPACE + '/scripts/ci-report.js');
-            await report.main();
+            const report = require('./scripts/ci-report.js');
+            await report(github, context, core);
