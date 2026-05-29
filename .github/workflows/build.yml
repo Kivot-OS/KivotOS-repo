@@ -366,6 +366,8 @@ jobs:
         uses:   actions/github-script@v9.0.0
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_URL: ${{ vars.AI_URL }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
         with:
           script: |
             const report = require('./scripts/ci-report.js');
