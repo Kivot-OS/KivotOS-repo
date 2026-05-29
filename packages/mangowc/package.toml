@@ -39,7 +39,8 @@ build = [
     "libc6-dev",
     "libudev-dev",
     "libmtdev-dev",
-    "libevdev-dev"
+    "libevdev-dev",
+    "libcjson-dev"
 ]
 runtime = [
     "libwayland-client0",
