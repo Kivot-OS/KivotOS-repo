@@ -125,10 +125,18 @@ module.exports = async function(github, context, core) {
       let allLogs = '';
       for (const job of failedJobs) {
         try {
-          const resp = await github.rest.actions.downloadJobLogsForWorkflowRun({
-            ...context.repo, job_id: job.id,
-          });
-          const text = typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data);
+          const resp = await github.request(
+            'GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs',
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              job_id: job.id,
+              request: { redirect: 'follow' },
+            }
+          );
+          const text = typeof resp.data === 'string'
+            ? resp.data
+            : Buffer.from(resp.data).toString('utf-8');
           const lines = text.split('\n').filter(l => l.trim());
           if (lines.length > 50) {
             allLogs += lines.slice(0, 50).join('\n') + '\n... [truncated]\n';
