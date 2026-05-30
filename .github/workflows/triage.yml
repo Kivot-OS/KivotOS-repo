@@ -1,0 +1,94 @@
+name: Issue Triage
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9.0.0
+        with:
+          script: |
+            const { title, body } = context.payload.issue;
+            const text = (title + ' ' + (body || ''));
+            const labels = [];
+
+            if (/bug|crash|lỗi|wrong|incorrect|fail/i.test(text))
+              labels.push('bug');
+            if (/feature|thêm|add|improve|wishlist/i.test(text))
+              labels.push('enhancement');
+            if (/question|hỏi|how to|\?/i.test(text))
+              labels.push('question');
+            if (/ci.*fail|build.*error|pipeline/i.test(text))
+              labels.push('ci-failure');
+            if (/docs|document|readme|manual/i.test(text))
+              labels.push('docs');
+
+            for (const pkg of ['awww','hellwal','mangowc','matugen','wallust','yazi']) {
+              if (new RegExp(pkg, 'i').test(text))
+                labels.push('package:' + pkg);
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: context.payload.issue.number,
+                labels
+              });
+            }
+
+      - name: AI triage fallback
+        if: ${{ !contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'enhancement') && !contains(github.event.issue.labels.*.name, 'question') }}
+        uses: actions/github-script@v9.0.0
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_URL: ${{ vars.AI_URL }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
+        with:
+          script: |
+            const apiKey = process.env.AI_API_KEY;
+            const apiUrl = process.env.AI_URL || 'https://ollama.com/api/chat';
+            const model = process.env.AI_MODEL || 'devstral-small-2:24b-cloud';
+
+            if (!apiKey) {
+              console.log('No AI_API_KEY set, skipping AI triage');
+              return;
+            }
+
+            const { title, body } = context.payload.issue;
+            const text = title + '\n' + (body || '');
+
+            const resp = await fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + apiKey,
+              },
+              body: JSON.stringify({
+                model: model,
+                messages: [
+                  { role: 'system', content: 'You classify GitHub issues. Respond with only one word: bug, enhancement, question, docs, or ci-failure.' },
+                  { role: 'user', content: 'Classify this issue:\n\n' + text },
+                ],
+                stream: false,
+                temperature: 0.1,
+                max_tokens: 10,
+              }),
+            });
+
+            if (resp.ok) {
+              const data = await resp.json();
+              const category = (data.message?.content || '').trim().toLowerCase();
+              const valid = ['bug', 'enhancement', 'question', 'docs', 'ci-failure'];
+              if (valid.includes(category)) {
+                await github.rest.issues.addLabels({
+                  ...context.repo,
+                  issue_number: context.payload.issue.number,
+                  labels: [category],
+                });
+              }
+            }

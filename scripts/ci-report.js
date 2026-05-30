@@ -18,10 +18,64 @@ module.exports = async function(github, context, core) {
     }
   }
 
+  function categorizeError(logSnippet) {
+    if (!logSnippet) return { type: 'unknown', severity: 2, label: 'error:unknown' };
+    if (/apt-get install.*fail|E: Package.*has no installation candidate/i.test(logSnippet))
+      return { type: 'build-dep', severity: 3, label: 'error:build-dep' };
+    if (/error\[E\d+\]|error: aborting|cargo.*failed|make.*\d+Error/i.test(logSnippet))
+      return { type: 'compile', severity: 4, label: 'error:compile' };
+    if (/test.*FAIL|assertion failed|panic/i.test(logSnippet))
+      return { type: 'test', severity: 2, label: 'error:test' };
+    if (/timeout|resolve.*host|connection refused/i.test(logSnippet))
+      return { type: 'network', severity: 3, label: 'error:network' };
+    if (/killed|OOM|memory.*exhausted/i.test(logSnippet))
+      return { type: 'oom', severity: 5, label: 'error:oom' };
+    if (/The operation was canceled|timed out/i.test(logSnippet))
+      return { type: 'timeout', severity: 2, label: 'error:timeout' };
+    return { type: 'unknown', severity: 2, label: 'error:unknown' };
+  }
+
+  function getBlameInfo(files) {
+    return (files || []).filter(Boolean).map(f => ({
+      file: f,
+      blame: exec(`git blame -L 1,1 -- "${f}" 2>/dev/null || true`),
+      lastCommit: exec(`git log -1 --format="%h %an %ad: %s" -- "${f}" 2>/dev/null || true`),
+    }));
+  }
+
+  function getCommitDiff() {
+    const stat = exec('git diff --stat HEAD~1 HEAD 2>/dev/null || true');
+    const patch = exec('git diff HEAD~1 HEAD 2>/dev/null || true');
+    return { stat, patch: patch.slice(0, 3000) };
+  }
+
+  function getBuildTimes(run) {
+    const steps = run.steps || [];
+    return steps.filter(s => s.started_at && s.completed_at).map(s => ({
+      name: s.name,
+      duration: ((new Date(s.completed_at)) - (new Date(s.started_at))) / 1000,
+    }));
+  }
+
+  function getDependents(pkgName) {
+    const pkgsDir = path.join(GITHUB_WORKSPACE, 'packages');
+    if (!fs.existsSync(pkgsDir)) return [];
+    const packages = fs.readdirSync(pkgsDir).filter(d =>
+      fs.statSync(path.join(pkgsDir, d)).isDirectory()
+    );
+    return packages.filter(p => {
+      if (p === pkgName) return false;
+      const cfg = readPackageConfig(p);
+      return cfg?.raw?.includes(pkgName);
+    });
+  }
+
   function extractPackageNames(jobs) {
     const names = new Set();
-    const knownDirs = fs.readdirSync(path.join(GITHUB_WORKSPACE, 'packages'))
-      .filter(d => fs.statSync(path.join(GITHUB_WORKSPACE, 'packages', d)).isDirectory());
+    const pkgsDir = path.join(GITHUB_WORKSPACE, 'packages');
+    if (!fs.existsSync(pkgsDir)) return [];
+    const knownDirs = fs.readdirSync(pkgsDir)
+      .filter(d => fs.statSync(path.join(pkgsDir, d)).isDirectory());
     for (const job of jobs) {
       const match = job.name.match(/\(([^)]+)\)/);
       if (match && knownDirs.includes(match[1])) names.add(match[1]);
@@ -76,6 +130,20 @@ module.exports = async function(github, context, core) {
     return { changedFiles: diff, recentCommits: msg };
   }
 
+  async function findSimilarIssues(github, context, errorType, pkgNames) {
+    try {
+      const { data: issues } = await github.rest.issues.listForRepo({
+        ...context.repo, state: 'open', labels: 'ci-failure', per_page: 20
+      });
+      return issues.filter(i =>
+        pkgNames.some(p => i.title.includes(p)) ||
+        i.body?.includes(errorType)
+      ).map(i => ({ number: i.number, title: i.title }));
+    } catch {
+      return [];
+    }
+  }
+
   const jobs = await getFailedJobs(github, context);
   const { data: run } = await github.rest.actions.getWorkflowRun({
     ...context.repo, run_id: context.runId,
@@ -84,13 +152,41 @@ module.exports = async function(github, context, core) {
   const pkgNames = extractPackageNames(jobs, run);
   const logSnippet = getFailedLogs(context.runId);
 
+  const errorInfo = categorizeError(logSnippet);
+  const diffInfo = getCommitDiff();
+
+  const changedFiles = [
+    ...(run.head_commit?.modified || []),
+    ...(run.head_commit?.added || []),
+    ...(run.head_commit?.removed || []),
+  ];
+  const blameInfo = getBlameInfo(changedFiles);
+
+  const buildTimes = getBuildTimes(run);
+
+  const deps = {};
+  for (const n of pkgNames) deps[n] = getDependents(n);
+
+  const similarIssues = await findSimilarIssues(github, context, errorInfo.type, pkgNames);
+
+  const allLabels = ['ci-failure', errorInfo.label];
+  const severityLabel = errorInfo.severity >= 4 ? 'severity:critical'
+    : errorInfo.severity >= 3 ? 'severity:high' : 'severity:medium';
+
   const { data: issue } = await github.rest.issues.create({
     ...context.repo,
     title: `CI Failed: ${context.workflow} #${context.runId}`,
-    body: buildIssueBody(jobs, run, pkgNames),
-    labels: ['ci-failure'],
+    body: buildIssueBody(jobs, run, pkgNames, errorInfo, similarIssues, buildTimes, deps),
+    labels: [...new Set(allLabels)],
   });
   core.notice(`Created issue #${issue.number}`);
+
+  try {
+    await github.rest.issues.addLabels({
+      ...context.repo, issue_number: issue.number,
+      labels: [severityLabel],
+    });
+  } catch {}
 
   if (!apiKey) {
     core.notice('No AI_API_KEY set, skipping AI analysis');
@@ -118,16 +214,14 @@ module.exports = async function(github, context, core) {
 
   const changes = getRecentChanges();
   const commitMsg = (run.head_commit?.message || 'N/A').split('\n')[0];
-  const changedFilesList = [...new Set(
-    (run.head_commit?.modified || [])
-      .concat(run.head_commit?.added || [])
-      .concat(run.head_commit?.removed || [])
-  )].join('\n') || 'N/A';
+  const changedFilesList = [...new Set(changedFiles)].join('\n') || 'N/A';
 
   const userPrompt = [
     `CI workflow "${context.workflow}" failed. Repository: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`,
     `Branch: ${context.ref} | Commit: ${context.sha}`,
     `Commit message: ${commitMsg}`,
+    ``,
+    `### Error info\nType: ${errorInfo.type} (severity: ${errorInfo.severity})`,
     ``,
     `### Files changed (last 5 commits)\n${changes.changedFiles || 'N/A'}`,
     ``,
@@ -152,6 +246,14 @@ module.exports = async function(github, context, core) {
     ``,
     changedFilesList !== 'N/A' ? `### Files changed in this commit\n${changedFilesList}` : '',
     ``,
+    diffInfo.stat ? `### Diff stat\n${diffInfo.stat}` : '',
+    ``,
+    blameInfo.length ? `### Blame info\n${blameInfo.map(b => `${b.file}: ${b.lastCommit}`).join('\n')}` : '',
+    ``,
+    buildTimes.length ? `### Build step times\n${buildTimes.map(t => `${t.name}: ${t.duration}s`).join('\n')}` : '',
+    ``,
+    similarIssues.length ? `### Similar open issues\n${similarIssues.map(i => `#${i.number}: ${i.title}`).join('\n')}` : '',
+    ``,
     `Phân tích nguyên nhân failure và đề xuất cách fix cụ thể.`,
     `Nếu log không đủ, nêu rõ cần xem log chi tiết step nào.`,
   ].filter(Boolean).join('\n');
@@ -162,7 +264,7 @@ module.exports = async function(github, context, core) {
       await github.rest.issues.createComment({
         ...context.repo,
         issue_number: issue.number,
-        body: `## 🤖 AI Analysis\n**Model:** ${model}\n\n${analysis}`,
+        body: `## 🤖 AI Analysis\n**Model:** ${model}\n**Error:** ${errorInfo.type} (severity: ${errorInfo.severity})\n\n${analysis}`,
       });
       core.notice('AI analysis posted to issue');
     }
@@ -183,10 +285,11 @@ async function getFailedJobs(github, context) {
   return data.jobs.filter(j => j.conclusion === 'failure');
 }
 
-function buildIssueBody(jobs, run, pkgNames) {
+function buildIssueBody(jobs, run, pkgNames, errorInfo, similarIssues, buildTimes, deps) {
   const lines = [
     `## ❌ CI Build Failure`,
     ``,
+    `**Error:** ${errorInfo.type} (severity: ${errorInfo.severity})`,
     `**Run:** [${run.id}](${run.html_url})`,
     `**Branch:** \`${run.head_branch}\``,
     `**Commit:** \`${run.head_sha}\``,
@@ -197,7 +300,15 @@ function buildIssueBody(jobs, run, pkgNames) {
       return `- **${j.name}**\n${steps}`;
     }),
     ``,
-    pkgNames.length ? `### Affected Packages\n${pkgNames.map(n => `- \`${n}\``).join('\n')}` : '',
+    pkgNames.length ? `### Affected Packages\n${pkgNames.map(n => {
+      const dependents = deps[n];
+      const depText = dependents?.length ? ` → affects ${dependents.join(', ')}` : '';
+      return `- \`${n}\`${depText}`;
+    }).join('\n')}` : '',
+    ``,
+    buildTimes.length ? `### Build Step Times\n${buildTimes.map(t => `- ${t.name}: \`${t.duration}s\``).join('\n')}` : '',
+    ``,
+    similarIssues.length ? `### Related Open Issues\n${similarIssues.map(i => `- #${i.number}: ${i.title}`).join('\n')}` : '',
     ``,
     `---`,
     `*Đang chờ AI analysis...*`,

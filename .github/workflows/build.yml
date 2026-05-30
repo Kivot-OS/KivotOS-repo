@@ -341,6 +341,28 @@ jobs:
 
           echo "✅ Published to R2 successfully!"
 
+  cleanup:
+    needs: [matrix, build, publish]
+    if: always() && needs.build.result == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses:   actions/github-script@v9.0.0
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              ...context.repo, state: 'open', labels: 'ci-failure'
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: issue.number,
+                body: '✅ CI passed. Auto-closing.'
+              });
+              await github.rest.issues.update({
+                ...context.repo, issue_number: issue.number, state: 'closed'
+              });
+            }
+
   report:
     needs: [matrix, build, publish]
     if: always() && (needs.matrix.result == 'failure' || needs.build.result == 'failure')
@@ -352,14 +374,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure ci-failure label exists
+      - name: Ensure labels exist
         uses:   actions/github-script@v9.0.0
         with:
           script: |
-            try {
-              await github.rest.issues.getLabel({ ...context.repo, name: 'ci-failure' });
-            } catch {
-              await github.rest.issues.createLabel({ ...context.repo, name: 'ci-failure', color: 'd73a4a' });
+            const needed = [
+              { name: 'ci-failure',    color: 'd73a4a' },
+              { name: 'error:build-dep', color: 'fbca04' },
+              { name: 'error:compile',   color: 'fbca04' },
+              { name: 'error:test',      color: 'fbca04' },
+              { name: 'error:network',   color: 'fbca04' },
+              { name: 'error:oom',       color: 'fbca04' },
+              { name: 'error:timeout',   color: 'fbca04' },
+              { name: 'error:unknown',   color: 'fbca04' },
+              { name: 'severity:critical', color: 'b60205' },
+              { name: 'severity:high',    color: 'd93f0b' },
+              { name: 'severity:medium',  color: 'e4e669' },
+            ];
+            for (const label of needed) {
+              try {
+                await github.rest.issues.getLabel({ ...context.repo, name: label.name });
+              } catch {
+                await github.rest.issues.createLabel({ ...context.repo, ...label });
+              }
             }
 
       - name: Create issue on failure + AI analysis
