@@ -9,7 +9,7 @@ license = "MIT"
 homepage = "https://codeberg.org/explosion-mental/wallust"
 
 [depends]
-build = ["rustc", "cargo", "git", "make", "package-that-does-not-exist-12345"]
+build = ["rustc", "cargo", "git", "make"]
 runtime = ["imagemagick"]
 
 [distro]
