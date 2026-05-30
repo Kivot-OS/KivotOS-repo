@@ -117,23 +117,38 @@ module.exports = async function(github, context, core) {
   }
 
   async function getFailedLogs(github, context, runId) {
+    const repo = process.env.GITHUB_REPOSITORY;
+    const ghResult = exec(`gh run view ${runId} --log-failed --repo ${repo} 2>&1 || true`, { timeout: 30000 });
+    core.notice(`gh debug: exit code=${ghResult ? 'ok' : 'empty'}, len=${ghResult?.length || 0}`);
+    if (ghResult && ghResult.length > 10) {
+      const lines = ghResult.split('\n').filter(l => l.trim());
+      if (lines.length > 100) return lines.slice(0, 100).join('\n') + '\n... [truncated]';
+      return ghResult;
+    }
+
     try {
       const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
         ...context.repo, run_id: runId,
       });
       const failedJobs = jobs.jobs.filter(j => j.conclusion === 'failure');
       const token = process.env.GITHUB_TOKEN;
-      if (!token) return '';
+      if (!token) {
+        core.notice('No GITHUB_TOKEN available, tried gh');
+        return ghResult || '';
+      }
 
       let allLogs = '';
       for (const job of failedJobs) {
         try {
-          const resp = await fetch(
-            `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/actions/jobs/${job.id}/logs`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          const url = `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/actions/jobs/${job.id}/logs`;
+          const resp = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+            redirect: 'follow',
+          });
+          core.notice(`fetch logs job ${job.id}: status=${resp.status}`);
           if (!resp.ok) continue;
           const text = await resp.text();
+          core.notice(`fetch logs size: ${text.length} bytes`);
           const lines = text.split('\n').filter(l => l.trim());
           if (lines.length > 100) {
             allLogs += lines.slice(0, 100).join('\n') + '\n... [truncated]\n';
@@ -144,10 +159,10 @@ module.exports = async function(github, context, core) {
           core.warning(`Failed to download logs for job ${job.id}: ${e.message}`);
         }
       }
-      return allLogs;
+      return allLogs || ghResult || '';
     } catch (e) {
       core.warning(`Failed to list jobs: ${e.message}`);
-      return '';
+      return ghResult || '';
     }
   }
 
