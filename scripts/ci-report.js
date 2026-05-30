@@ -118,37 +118,51 @@ module.exports = async function(github, context, core) {
 
   async function getFailedLogs(github, context, runId) {
     const repo = process.env.GITHUB_REPOSITORY;
-    const ghResult = exec(`gh run view ${runId} --log-failed --repo ${repo} 2>&1 || true`, { timeout: 30000 });
-    core.notice(`gh debug: exit code=${ghResult ? 'ok' : 'empty'}, len=${ghResult?.length || 0}`);
-    if (ghResult && ghResult.length > 10) {
-      const lines = ghResult.split('\n').filter(l => l.trim());
-      if (lines.length > 100) return lines.slice(0, 100).join('\n') + '\n... [truncated]';
-      return ghResult;
+    const ghResult = exec(`gh run view ${runId} --repo ${repo} 2>&1 || true`, { timeout: 30000 });
+    core.notice(`gh view: ${(ghResult || '').slice(0, 500)}`);
+    const ghLog = exec(`gh run view ${runId} --log --repo ${repo} 2>&1 || true`, { timeout: 30000 });
+    core.notice(`gh log size: ${(ghLog || '').length}`);
+    if (ghLog && ghLog.length > 50) {
+      const lines = ghLog.split('\n').filter(l => l.trim());
+      const failedLines = lines.filter(l => /E:|error|failed|not found/i.test(l));
+      core.notice(`gh log found ${failedLines.length} error lines`);
+      if (failedLines.length > 0) {
+        const snippet = failedLines.slice(0, 20).join('\n');
+        core.notice(`gh error snippet: ${snippet.slice(0, 500)}`);
+        return ghLog.slice(0, 5000);
+      }
     }
 
     try {
       const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
         ...context.repo, run_id: runId,
       });
+      core.notice(`total jobs: ${jobs.jobs.length}`);
       const failedJobs = jobs.jobs.filter(j => j.conclusion === 'failure');
+      core.notice(`failed jobs: ${failedJobs.length}`);
+
       const token = process.env.GITHUB_TOKEN;
-      if (!token) {
-        core.notice('No GITHUB_TOKEN available, tried gh');
-        return ghResult || '';
-      }
+      core.notice(`GITHUB_TOKEN set: ${!!token}`);
+
+      if (!token) return ghLog || '';
 
       let allLogs = '';
       for (const job of failedJobs) {
         try {
+          core.notice(`fetching logs for job ${job.id} (${job.name?.slice(0, 50)})`);
           const url = `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/actions/jobs/${job.id}/logs`;
           const resp = await fetch(url, {
             headers: { Authorization: `Bearer ${token}` },
             redirect: 'follow',
           });
-          core.notice(`fetch logs job ${job.id}: status=${resp.status}`);
-          if (!resp.ok) continue;
+          core.notice(`fetch status: ${resp.status} ${resp.statusText}`);
+          if (!resp.ok) {
+            const errText = await resp.text().catch(() => '');
+            core.notice(`fetch error body: ${errText.slice(0, 200)}`);
+            continue;
+          }
           const text = await resp.text();
-          core.notice(`fetch logs size: ${text.length} bytes`);
+          core.notice(`fetch log size: ${text.length}`);
           const lines = text.split('\n').filter(l => l.trim());
           if (lines.length > 100) {
             allLogs += lines.slice(0, 100).join('\n') + '\n... [truncated]\n';
@@ -159,10 +173,11 @@ module.exports = async function(github, context, core) {
           core.warning(`Failed to download logs for job ${job.id}: ${e.message}`);
         }
       }
-      return allLogs || ghResult || '';
+      if (allLogs) return allLogs;
+      return ghLog || '';
     } catch (e) {
       core.warning(`Failed to list jobs: ${e.message}`);
-      return ghResult || '';
+      return ghLog || '';
     }
   }
 
