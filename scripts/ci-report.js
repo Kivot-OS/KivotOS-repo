@@ -20,7 +20,7 @@ module.exports = async function(github, context, core) {
 
   function categorizeError(logSnippet) {
     if (!logSnippet) return { type: 'unknown', severity: 2, label: 'error:unknown' };
-    if (/apt-get install.*fail|E: Package.*has no installation candidate/i.test(logSnippet))
+    if (/apt-get install.*fail|E: (Package.*has no installation candidate|Unable to locate package)/i.test(logSnippet))
       return { type: 'build-dep', severity: 3, label: 'error:build-dep' };
     if (/error\[E\d+\]|error: aborting|cargo.*failed|make.*\d+Error/i.test(logSnippet))
       return { type: 'compile', severity: 4, label: 'error:compile' };
