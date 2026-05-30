@@ -256,6 +256,16 @@ module.exports = async function(github, context, core) {
     });
   } catch {}
 
+  const pkgLabels = pkgNames.map(n => 'package:' + n);
+  if (pkgLabels.length) {
+    try {
+      await github.rest.issues.addLabels({
+        ...context.repo, issue_number: issue.number,
+        labels: pkgLabels,
+      });
+    } catch {}
+  }
+
   if (!apiKey) {
     core.notice('No AI_API_KEY set, skipping AI analysis');
     return;
