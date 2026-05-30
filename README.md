@@ -2,7 +2,6 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build](https://github.com/Kivot-OS/KivotOS-repo/actions/workflows/build.yml/badge.svg)](https://github.com/Kivot-OS/KivotOS-repo/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/Kivot-OS/KivotOS-repo)](https://github.com/Kivot-OS/KivotOS-repo/releases)
 
 Personal APT repository for Debian Trixie (amd64) with curated CLI tools.
 Packages are built from source and published to Cloudflare R2.
@@ -35,20 +34,7 @@ sudo apt update
 sudo apt install yazi hellwal wallust matugen
 ```
 
----
 
-## Packages
-
-| Package | Type | Upstream | Description |
-|---------|------|----------|-------------|
-| `awww` | cargo | [awww](https://github.com/awww) | -- |
-| `hellwal` | cargo | [hellwal](https://github.com/hellwal) | -- |
-| `mangowc` | make | [mangowc](https://codeberg.org/mangowc) | -- |
-| `matugen` | cargo | [matugen](https://github.com/matugen) | Material You color generator |
-| `wallust` | cargo | [wallust](https://github.com/wallust) | -- |
-| `yazi` | cargo | [yazi](https://github.com/yazi) | Terminal file manager |
-
----
 
 ## Development
 
