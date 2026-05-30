@@ -117,7 +117,8 @@ module.exports = async function(github, context, core) {
   }
 
   function getFailedLogs(runId) {
-    const raw = exec(`gh run view ${runId} --log-failed 2>/dev/null || true`, { timeout: 30000 });
+    const repo = process.env.GITHUB_REPOSITORY;
+    const raw = exec(`gh run view ${runId} --log-failed --repo ${repo} 2>/dev/null || true`, { timeout: 30000 });
     if (!raw) return '';
     const lines = raw.split('\n').filter(l => l.trim());
     if (lines.length > 100) return lines.slice(0, 100).join('\n') + '\n... [truncated]';
