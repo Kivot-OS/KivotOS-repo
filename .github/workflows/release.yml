@@ -22,7 +22,6 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL }}
         with:
           script: |
-            const { execSync } = require('child_process');
             const changelog = require('./scripts/gen-changelog.js');
             const apiKey = process.env.AI_API_KEY;
             const apiUrl = process.env.AI_URL || 'https://ollama.com/api/chat';
