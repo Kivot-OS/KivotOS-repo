@@ -116,12 +116,34 @@ module.exports = async function(github, context, core) {
     return results.join('\n\n') || 'No relevant matches found.';
   }
 
-  function getFailedLogs(runId) {
-    const raw = exec(`gh run view ${runId} --log-failed 2>/dev/null || true`, { timeout: 30000 });
-    if (!raw) return '';
-    const lines = raw.split('\n').filter(l => l.trim());
-    if (lines.length > 100) return lines.slice(0, 100).join('\n') + '\n... [truncated]';
-    return raw;
+  async function getFailedLogs(github, context, runId) {
+    try {
+      const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+        ...context.repo, run_id: runId,
+      });
+      const failedJobs = jobs.jobs.filter(j => j.conclusion === 'failure');
+      let allLogs = '';
+      for (const job of failedJobs) {
+        try {
+          const resp = await github.rest.actions.downloadJobLogsForWorkflowRun({
+            ...context.repo, job_id: job.id,
+          });
+          const text = typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data);
+          const lines = text.split('\n').filter(l => l.trim());
+          if (lines.length > 50) {
+            allLogs += lines.slice(0, 50).join('\n') + '\n... [truncated]\n';
+          } else {
+            allLogs += text + '\n';
+          }
+        } catch (e) {
+          core.warning(`Failed to download logs for job ${job.id}: ${e.message}`);
+        }
+      }
+      return allLogs;
+    } catch (e) {
+      core.warning(`Failed to list jobs: ${e.message}`);
+      return '';
+    }
   }
 
   function getRecentChanges() {
@@ -150,7 +172,7 @@ module.exports = async function(github, context, core) {
   });
 
   const pkgNames = extractPackageNames(jobs, run);
-  const logSnippet = getFailedLogs(context.runId);
+  const logSnippet = await getFailedLogs(github, context, context.runId);
 
   const errorInfo = categorizeError(logSnippet);
   const diffInfo = getCommitDiff();
