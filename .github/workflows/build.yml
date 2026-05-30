@@ -406,6 +406,7 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           AI_URL: ${{ vars.AI_URL }}
           AI_MODEL: ${{ vars.AI_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const report = require('./scripts/ci-report.js');
