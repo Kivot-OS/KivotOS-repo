@@ -79,5 +79,3 @@ This repository configuration is provided as-is. Each package retains its origin
 **Repository:** https://github.com/Kivot-OS/KivotOS-repo
 
 **APT URL:** https://kivotos-repo.dungdinhmanh0209.workers.dev/
-
-**Worker source:** https://github.com/Kivot-OS/kivotos-repo-worker
